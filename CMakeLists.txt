@@ -4,24 +4,29 @@ cmake_minimum_required(VERSION 3.10)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake")
 
-project(delta-template)
+project(scs-2d-demo)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(delta-template WIN32
+add_executable(scs-2d-demo WIN32
     # Source files
     src/main.cpp
-    src/template_application.cpp
+    src/double_pendulum_application.cpp
+    src/geometry_generator.cpp
+    src/demo_application.cpp
 
     # Include files
     include/delta.h
-    include/template_application.h
+    include/double_pendulum_application.h
+    include/geometry_generator.h
+    include/double_pendulum_application.h
 )
 
-target_link_libraries(delta-template
+target_link_libraries(scs-2d-demo
+    simple-2d-constraint-solver
     delta-basic)
 
-target_include_directories(delta-template
+target_include_directories(scs-2d-demo
     PUBLIC dependencies/submodules)
 
 add_subdirectory(dependencies)

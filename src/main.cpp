@@ -1,4 +1,4 @@
-#include "../include/template_application.h"
+#include "../include/demo_application.h"
 
 #include <iostream>
 
@@ -7,10 +7,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     (void)lpCmdLine;
     (void)hPrevInstance;
 
-    TemplateApplication app; 
-    app.Initialize((void *)&hInstance, ysContextObject::DeviceAPI::DirectX11); 
-    app.Run();
-    app.Destroy();
+    DemoApplication *app = DemoApplication::createApplication(
+            DemoApplication::Application::DoublePendulum);
+    app->initialize(hInstance, ysContextObject::DeviceAPI::DirectX11);
+    app->run();
+    app->destroy();
 
     return 0;
 }
