@@ -27,8 +27,8 @@ void DoublePendulumApplication::initialize() {
 
     const double rodDensity = 1.0;
 
-    m_r0 = 100.5;
-    m_r1 = 200.5;
+    m_r0 = 1.5;
+    m_r1 = 2.0;
 
     m_pendulum0.m = rodDensity * m_r0 * 2;
     m_pendulum0.I = m_pendulum0.m * m_r0 * m_r0;
@@ -74,20 +74,19 @@ void DoublePendulumApplication::process(float dt) {
 }
 
 void DoublePendulumApplication::render() {
-    drawPendulum(
-            -2.0,
-            0.0,
+    drawGrid();
+
+    drawBar(
             m_pendulum0.p_x,
             m_pendulum0.p_y,
             m_pendulum0.theta,
-            m_r0);
-    drawPendulum(
-            2.0,
-            0.0,
+            m_r0 * 2);
+
+    drawBar(
             m_pendulum1.p_x,
             m_pendulum1.p_y,
             m_pendulum1.theta,
-            m_r1);
+            m_r1 * 2);
 
     std::stringstream ss;
     ss << (m_pendulum0.v_theta / (ysMath::Constants::TWO_PI)) * 60 << " RPM";
@@ -151,16 +150,17 @@ void DoublePendulumApplication::drawPendulum(
     params.center = ysMath::LoadVector(0.0f, 0.0f, 0.0f);
     params.normal = ysMath::Constants::ZAxis;
     params.radius = 100.3f;
-    params.maxEdgeLength = 0.1f;
+    params.maxEdgeLength = 1.0f;
     params.startAngle = 0.0f;
     params.endAngle = ysMath::Constants::TWO_PI;
     params.patternHeight = 1.0f;
     params.textureWidthHeightRatio = 5.0;
     params.taperTail = ysMath::Constants::TWO_PI * 0.1f;
 
+    m_geometryGenerator.startShape();
     m_geometryGenerator.generateLineRingBalanced(
-        &indices,
         params);
+    m_geometryGenerator.endShape(&indices);
     drawGenerated(indices);
 
     m_shaders.SetObjectTransform(mat);
@@ -173,25 +173,27 @@ void DoublePendulumApplication::drawPendulum(
     lineParams.textureWidthHeightRatio = 5.0f;
     lineParams.taperTail = 0.0f;
 
+    m_geometryGenerator.startShape();
     m_geometryGenerator.generateLine(
-        &indices,
         lineParams);
+    m_geometryGenerator.endShape(&indices);
     drawGenerated(indices);
 
     GeometryGenerator::LineRingParameters lineEndParams{};
     lineEndParams.center = ysMath::LoadVector(-r, 0.0f, 0.0f);
     lineEndParams.normal = ysMath::Constants::ZAxis;
     lineEndParams.radius = 50.0f;
-    lineEndParams.maxEdgeLength = 0.1f;
+    lineEndParams.maxEdgeLength = 1.0f;
     lineEndParams.startAngle = 0.0f;
     lineEndParams.endAngle = ysMath::Constants::TWO_PI;
     lineEndParams.patternHeight = 1.0f;
     lineEndParams.textureWidthHeightRatio = 5.0;
     lineEndParams.taperTail = ysMath::Constants::TWO_PI * 0.1f;
 
+    m_geometryGenerator.startShape();
     m_geometryGenerator.generateLineRingBalanced(
-        &indices,
         lineEndParams);
+    m_geometryGenerator.endShape(&indices);
     drawGenerated(indices);
 
     lineEndParams.center = ysMath::LoadVector(r, 0.0f, 0.0f);
@@ -204,8 +206,11 @@ void DoublePendulumApplication::drawPendulum(
     lineEndParams.textureWidthHeightRatio = 5.0;
     lineEndParams.taperTail = ysMath::Constants::TWO_PI * 0.1f;
 
+    m_geometryGenerator.startShape();
     m_geometryGenerator.generateLineRingBalanced(
-        &indices,
         lineEndParams);
+    m_geometryGenerator.endShape(&indices);
     drawGenerated(indices);
+
+    //drawRoundedFrame(0, 0, 500, 120 - 15 / 2.0, 15, 60);
 }

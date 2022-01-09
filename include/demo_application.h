@@ -30,6 +30,19 @@ public:
 
     void drawGenerated(const GeometryGenerator::GeometryIndices &indices);
 
+    void drawBar(float x, float y, float theta, float length);
+    void drawRoundedFrame(
+            float x,
+            float y,
+            float width,
+            float height,
+            float thickness,
+            float cornerRadius);
+    void drawGrid();
+
+    float pixelsToUnits(float pixels) const;
+    float unitsToPixels(float units) const;
+
 protected:
     void renderScene();
 
@@ -40,6 +53,8 @@ protected:
 
     dbasic::ShaderSet m_shaderSet;
     dbasic::DefaultShaders m_shaders;
+
+    float m_displayHeight;
 
     dbasic::DeltaEngine m_engine;
     dbasic::AssetManager m_assetManager;

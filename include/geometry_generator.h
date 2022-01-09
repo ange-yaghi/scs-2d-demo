@@ -11,8 +11,6 @@ public:
         int FaceCount;
 
         dbasic::Vertex *VertexData;
-
-        bool Failed;
     };
 
     struct LineRingParameters {
@@ -42,12 +40,31 @@ public:
         float x0, y0;
         float x1, y1;
         float lineWidth;
-        int vertexOffset = 0;
+    };
+
+    struct Ring2dParameters {
+        float center_x = 0.0f, center_y = 0.0f;
+        float startAngle = 0.0f, endAngle = ysMath::Constants::TWO_PI;
+        float innerRadius = 0.5f, outerRadius = 1.0f;
+        float maxEdgeLength = 2.0f;
+    };
+
+    struct Circle2dParameters {
+        float center_x = 0.0f, center_y = 0.0f;
+        float radius = 1.0f;
+        float maxEdgeLength = 2.0f;
     };
 
     struct FrameParameters {
         float x, y;
         float frameWidth, frameHeight;
+        float lineWidth;
+    };
+
+    struct GridParameters {
+        float x, y;
+        float width, height;
+        float div_x, div_y;
         float lineWidth;
     };
 
@@ -66,16 +83,14 @@ public:
 
     void reset();
 
-    void generateFilledCircle(
-        GeometryIndices *indices,
+    bool generateFilledCircle(
         const ysVector &normal,
         const ysVector &center,
         float radius,
         float maxEdgeLength
     );
 
-    void generateFilledFanPolygon(
-        GeometryIndices *indices,
+    bool generateFilledFanPolygon(
         const ysVector &normal,
         const ysVector &up,
         const ysVector &center,
@@ -84,30 +99,35 @@ public:
         int segmentCount
     );
 
-    void generateLineRing(
-        GeometryIndices *indices,
-        const LineRingParameters &params
-    );
+    bool generateLineRing(
+        const LineRingParameters &params);
 
-    void generateLineRingBalanced(
-        GeometryIndices *indices,
-        const LineRingParameters &params
-    );
+    bool generateLineRingBalanced(
+        const LineRingParameters &params);
 
-    void generateLine(
-        GeometryIndices *indices,
-        const LineParameters &params
-    );
+    bool generateLine(
+        const LineParameters &params);
 
-    void generateLine2d(
-        GeometryIndices *indices,
+    bool generateLine2d(
         const Line2dParameters &params);
 
-    void generateFrame(
-        GeometryIndices *indices,
+    bool generateRing2d(
+        const Ring2dParameters &params);
+
+    bool generateFrame(
         const FrameParameters &params);
 
+    bool generateGrid(
+        const GridParameters &params);
+
+    bool generateCircle2d(
+        const Circle2dParameters &params);
+
+    void startShape();
+    void endShape(GeometryIndices *indices);
+
 protected:
+    void startSubshape();
     dbasic::Vertex *writeVertex();
     void writeFace(unsigned short i0, unsigned short i1, unsigned short i2);
 
@@ -123,6 +143,9 @@ protected:
 
     int m_vertexPointer;
     int m_indexPointer;
+
+    GeometryIndices m_currentShape;
+    int m_currentVertexIndex;
 };
 
 #endif /* ATG_SCS_2D_DEMO_GEOMETRY_GENERATOR_H */

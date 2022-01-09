@@ -9,6 +9,8 @@ GeometryGenerator::GeometryGenerator() {
 
     m_indexBufferSize = 0;
     m_vertexBufferSize = 0;
+
+    m_currentVertexIndex = 0;
 }
 
 GeometryGenerator::~GeometryGenerator() {
@@ -31,10 +33,10 @@ void GeometryGenerator::destroy() {
 void GeometryGenerator::reset() {
     m_vertexPointer = 0;
     m_indexPointer = 0;
+    m_currentVertexIndex = 0;
 }
 
-void GeometryGenerator::generateFilledCircle(
-    GeometryIndices *indices,
+bool GeometryGenerator::generateFilledCircle(
     const ysVector &normal,
     const ysVector &center,
     float radius,
@@ -45,24 +47,24 @@ void GeometryGenerator::generateFilledCircle(
 
     const float angle = std::asinf(maxEdgeLength / (2 * radius));
     const float steps = ysMath::Constants::TWO_PI / angle;
-    
+
     int wholeSteps = (int)std::ceilf(steps);
     wholeSteps = (wholeSteps < 3)
         ? 3
         : wholeSteps;
 
     generateFilledFanPolygon(
-        indices,
         normal,
         findOrthogonal(normal),
         center,
         radius,
         0.0f,
         wholeSteps);
+
+    return true;
 }
 
-void GeometryGenerator::generateFilledFanPolygon(
-    GeometryIndices *indices,
+bool GeometryGenerator::generateFilledFanPolygon(
     const ysVector &normal,
     const ysVector &up,
     const ysVector &center,
@@ -70,6 +72,8 @@ void GeometryGenerator::generateFilledFanPolygon(
     float rotation,
     int segmentCount)
 {
+    startSubshape();
+
     const int vertexCount = 1 + segmentCount;
     const int faceCount = segmentCount;
     const int indexCount = faceCount * 3;
@@ -77,15 +81,8 @@ void GeometryGenerator::generateFilledFanPolygon(
     if (vertexCount + m_vertexPointer > m_vertexBufferSize ||
         indexCount + m_indexPointer > m_indexBufferSize)
     {
-        indices->Failed = true;
-        return;
+        return false;
     }
-
-    indices->BaseIndex = m_indexPointer;
-    indices->BaseVertex = m_vertexPointer;
-    indices->FaceCount = faceCount;
-    indices->VertexData = &m_vertexData[m_vertexPointer];
-    indices->Failed = false;
 
     // Generate center vertex
     dbasic::Vertex *centerVertex = writeVertex();
@@ -120,14 +117,17 @@ void GeometryGenerator::generateFilledFanPolygon(
     for (int i = 0; i < segmentCount; ++i) {
         writeFace(0, i + 1, 1 + ((i + 1) % segmentCount));
     }
+
+    return true;
 }
 
-void GeometryGenerator::generateLineRing(
-    GeometryIndices *indices,
+bool GeometryGenerator::generateLineRing(
     const LineRingParameters &params)
 {
     // edge_length = (sin(theta) * radius) * 2
     // theta = arcsin(edge_length / (2 * radius))
+
+    startSubshape();
 
     const float actualStartAngle = params.startAngle - params.taperTail;
     const float actualEndAngle = params.endAngle + params.taperTail;
@@ -149,16 +149,10 @@ void GeometryGenerator::generateLineRing(
     const ysVector up = findOrthogonal(params.normal);
 
     if (vertexCount + m_vertexPointer > m_vertexBufferSize ||
-        indexCount + m_indexPointer > m_indexBufferSize) {
-        indices->Failed = true;
-        return;
+        indexCount + m_indexPointer > m_indexBufferSize)
+    {
+        return false;
     }
-
-    indices->BaseIndex = m_indexPointer;
-    indices->BaseVertex = m_vertexPointer;
-    indices->FaceCount = faceCount;
-    indices->VertexData = &m_vertexData[m_vertexPointer];
-    indices->Failed = false;
 
     // Generate center vertex
     const float angleStep = (actualEndAngle - actualStartAngle) / segmentCount;
@@ -193,8 +187,10 @@ void GeometryGenerator::generateLineRing(
         const float innerRadius = params.radius - (params.patternHeight / 2) * taper;
         const float outerRadius = params.radius + (params.patternHeight / 2) * taper;
 
-        const ysVector outerPos = ysMath::LoadVector(x0 * outerRadius, y0 * outerRadius, 0.0f, 1.0f);
-        const ysVector innerPos = ysMath::LoadVector(x0 * innerRadius, y0 * innerRadius, 0.0f, 1.0f);
+        const ysVector outerPos =
+            ysMath::LoadVector(x0 * outerRadius, y0 * outerRadius, 0.0f, 1.0f);
+        const ysVector innerPos =
+            ysMath::LoadVector(x0 * innerRadius, y0 * innerRadius, 0.0f, 1.0f);
 
         const float s =
             params.textureOffset +
@@ -218,10 +214,11 @@ void GeometryGenerator::generateLineRing(
         writeFace(INNER(i), OUTER(i + 1), INNER(i + 1));
         writeFace(INNER(i), OUTER(i), OUTER(i + 1));
     }
+
+    return true;
 }
 
-void GeometryGenerator::generateLineRingBalanced(
-    GeometryIndices *indices,
+bool GeometryGenerator::generateLineRingBalanced(
     const LineRingParameters &params)
 {
     const float midpoint = (params.startAngle + params.endAngle) / 2.0f;
@@ -232,23 +229,21 @@ void GeometryGenerator::generateLineRingBalanced(
     LineRingParameters augmentedParams = params;
     augmentedParams.textureOffset = offset;
 
-    generateLineRing(indices, augmentedParams);
+    generateLineRing(augmentedParams);
+
+    return true;
 }
 
-void GeometryGenerator::generateLine(
-    GeometryIndices *indices,
+bool GeometryGenerator::generateLine(
     const LineParameters &params)
 {
-    indices->BaseIndex = m_indexPointer;
-    indices->BaseVertex = m_vertexPointer;
-    indices->FaceCount = 2;
-    indices->VertexData = &m_vertexData[m_vertexPointer];
-    indices->Failed = false;
+    startSubshape();
 
     const ysVector tangent = ysMath::Normalize(ysMath::Sub(params.end, params.start));
     const ysVector right = ysMath::Cross(params.normal, tangent);
 
-    const float length = ysMath::GetScalar(ysMath::Magnitude(ysMath::Sub(params.end, params.start)));
+    const float length =
+        ysMath::GetScalar(ysMath::Magnitude(ysMath::Sub(params.end, params.start)));
 
     ysMatrix T0 = ysMath::LoadMatrix(
         right,
@@ -351,24 +346,19 @@ void GeometryGenerator::generateLine(
 
             writeFace(i * 4 + 2, i * 4 + 3, (i + 1) * 4 + 2);
             writeFace(i * 4 + 3, (i + 1) * 4 + 3, (i + 1) * 4 + 2);
-
-            indices->FaceCount += 4;
         }
     }
+
+    return true;
 }
 
-void GeometryGenerator::generateLine2d(
-        GeometryIndices *indices,
+bool GeometryGenerator::generateLine2d(
         const Line2dParameters &params)
 {
-    indices->BaseIndex = m_indexPointer;
-    indices->BaseVertex = m_vertexPointer;
-    indices->FaceCount = 2;
-    indices->VertexData = &m_vertexData[m_vertexPointer];
-    indices->Failed = false;
+    startSubshape();
 
     const float dx = params.x1 - params.x0;
-    const float dy = params.y1 - params.y1;
+    const float dy = params.y1 - params.y0;
     const float length = std::sqrt(dx * dx + dy * dy);
 
     const float dir_x = dx / length;
@@ -382,113 +372,243 @@ void GeometryGenerator::generateLine2d(
     vertex = writeVertex();
     vertex->Normal = ysMath::Constants::ZAxis;
     vertex->Pos = ysMath::LoadVector(
-            params.x0 - perp_x * params.lineWidth / 2,
-            params.y0 - perp_y * params.lineWidth / 2);
-    vertex->TexCoord = ysVector2(0.0f, 0.0f);
-
-    vertex = writeVertex();
-    vertex->Normal = ysMath::Constants::ZAxis;
-    vertex->Pos = ysMath::LoadVector(
-            params.x0 + perp_x * params.lineWidth / 2,
-            params.y0 - perp_y * params.lineWidth / 2);
-    vertex->TexCoord = ysVector2(0.0f, 0.0f);
-
-    vertex = writeVertex();
-    vertex->Normal = ysMath::Constants::ZAxis;
-    vertex->Pos = ysMath::LoadVector(
-            params.x0 - perp_x * params.lineWidth / 2,
-            params.y0 + perp_y * params.lineWidth / 2);
-    vertex->TexCoord = ysVector2(0.0f, 0.0f);
-
-    vertex = writeVertex();
-    vertex->Normal = ysMath::Constants::ZAxis;
-    vertex->Pos = ysMath::LoadVector(
             params.x0 + perp_x * params.lineWidth / 2,
             params.y0 + perp_y * params.lineWidth / 2);
     vertex->TexCoord = ysVector2(0.0f, 0.0f);
 
-    writeFace(0 + params.vertexOffset, 1 + params.vertexOffset, 2 + params.vertexOffset);
-    writeFace(1 + params.vertexOffset, 3 + params.vertexOffset, 2 + params.vertexOffset);
+    vertex = writeVertex();
+    vertex->Normal = ysMath::Constants::ZAxis;
+    vertex->Pos = ysMath::LoadVector(
+        params.x0 - perp_x * params.lineWidth / 2,
+        params.y0 - perp_y * params.lineWidth / 2);
+    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+    vertex = writeVertex();
+    vertex->Normal = ysMath::Constants::ZAxis;
+    vertex->Pos = ysMath::LoadVector(
+        params.x1 + perp_x * params.lineWidth / 2,
+        params.y1 + perp_y * params.lineWidth / 2);
+    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+    vertex = writeVertex();
+    vertex->Normal = ysMath::Constants::ZAxis;
+    vertex->Pos = ysMath::LoadVector(
+            params.x1 - perp_x * params.lineWidth / 2,
+            params.y1 - perp_y * params.lineWidth / 2);
+    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+    writeFace(0, 1, 2);
+    writeFace(1, 3, 2);
+
+    return true;
 }
 
-void GeometryGenerator::generateFrame(
-        GeometryIndices *indices,
+bool GeometryGenerator::generateFrame(
         const FrameParameters &params)
 {
-    indices->BaseIndex = m_indexPointer;
-    indices->BaseVertex = m_vertexPointer;
-    indices->FaceCount = 8;
-    indices->VertexData = &m_vertexData[m_vertexPointer];
-    indices->Failed = false;
+    Line2dParameters lineParams;
+    lineParams.lineWidth = params.lineWidth;
 
-    dbasic::Vertex *vertex = writeVertex();
-    vertex->Normal = ysMath::Constants::ZAxis;
-    vertex->Pos = ysMath::LoadVector(
-            params.x - params.frameWidth - params.lineWidth / 2,
-            params.y - params.frameHeight - params.lineWidth / 2);
-    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+    lineParams.x0 = params.x - params.frameWidth / 2 - params.lineWidth / 2;
+    lineParams.x1 = params.x + params.frameWidth / 2 + params.lineWidth / 2;
 
-    vertex = writeVertex();
-    vertex->Normal = ysMath::Constants::ZAxis;
-    vertex->Pos = ysMath::LoadVector(
-            params.x + params.frameWidth + params.lineWidth / 2,
-            params.y - params.frameHeight - params.lineWidth / 2);
-    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+    lineParams.y0 = lineParams.y1 = params.y + params.frameHeight / 2;
+    if (!generateLine2d(lineParams)) return false;
 
-    vertex = writeVertex();
-    vertex->Normal = ysMath::Constants::ZAxis;
-    vertex->Pos = ysMath::LoadVector(
-            params.x + params.frameWidth + params.lineWidth / 2,
-            params.y + params.frameHeight + params.lineWidth / 2);
-    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+    lineParams.y0 = lineParams.y1 = params.y - params.frameHeight / 2;
+    if (!generateLine2d(lineParams)) return false;
 
-    vertex = writeVertex();
-    vertex->Normal = ysMath::Constants::ZAxis;
-    vertex->Pos = ysMath::LoadVector(
-            params.x - params.frameWidth - params.lineWidth / 2,
-            params.y + params.frameHeight + params.lineWidth / 2);
-    vertex->TexCoord = ysVector2(0.0f, 0.0f);
-   
-    // Inner ring
-    vertex = writeVertex();
-    vertex->Normal = ysMath::Constants::ZAxis;
-    vertex->Pos = ysMath::LoadVector(
-            params.x - params.frameWidth + params.lineWidth / 2,
-            params.y - params.frameHeight - params.lineWidth / 2);
-    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+    lineParams.y0 = params.y - params.frameHeight / 2 - params.lineWidth / 2;
+    lineParams.y1 = params.y + params.frameHeight / 2 + params.lineWidth / 2;
 
-    vertex = writeVertex();
-    vertex->Normal = ysMath::Constants::ZAxis;
-    vertex->Pos = ysMath::LoadVector(
-            params.x + params.frameWidth - params.lineWidth / 2,
-            params.y - params.frameHeight + params.lineWidth / 2);
-    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+    lineParams.x0 = lineParams.x1 = params.x + params.frameWidth / 2;
+    if (!generateLine2d(lineParams)) return false;
 
-    vertex = writeVertex();
-    vertex->Normal = ysMath::Constants::ZAxis;
-    vertex->Pos = ysMath::LoadVector(
-            params.x + params.frameWidth - params.lineWidth / 2,
-            params.y + params.frameHeight - params.lineWidth / 2);
-    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+    lineParams.x0 = lineParams.x1 = params.x - params.frameWidth / 2;
+    if (!generateLine2d(lineParams)) return false;
 
-    vertex = writeVertex();
-    vertex->Normal = ysMath::Constants::ZAxis;
-    vertex->Pos = ysMath::LoadVector(
-            params.x - params.frameWidth + params.lineWidth / 2,
-            params.y + params.frameHeight - params.lineWidth / 2);
-    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+    return true;
+}
 
-    
+bool GeometryGenerator::generateGrid(
+        const GridParameters &params)
+{
+    Line2dParameters lineParams;
+    lineParams.lineWidth = params.lineWidth;
+
+    lineParams.x0 = params.x - params.width / 2;
+    lineParams.x1 = params.x + params.width / 2;
+
+    for (float offset = 0.0f; offset <= params.height / 2.0f; offset += params.div_y) {
+        lineParams.y0 = lineParams.y1 = params.y + offset;
+        if (!generateLine2d(lineParams)) return false;
+
+        lineParams.y0 = lineParams.y1 = params.y - offset;
+        if (!generateLine2d(lineParams)) return false;
+    }
+
+    lineParams.y0 = params.y - params.height / 2;
+    lineParams.y1 = params.y + params.height / 2;
+
+    for (float offset = 0.0f; offset <= params.width / 2.0f; offset += params.div_x) {
+        lineParams.x0 = lineParams.x1 = params.x + offset;
+        if (!generateLine2d(lineParams)) return false;
+
+        lineParams.x0 = lineParams.x1 = params.x - offset;
+        if (!generateLine2d(lineParams)) return false;
+    }
+
+    return true;
+}
+
+bool GeometryGenerator::generateRing2d(
+        const Ring2dParameters &params)
+{
+    // edge_length = (sin(theta) * radius) * 2
+    // theta = arcsin(edge_length / (2 * radius))
+
+    startSubshape();
+
+    const float angle = std::asinf(params.maxEdgeLength / (2 * params.outerRadius));
+    const float steps = (params.endAngle - params.startAngle) / angle;
+
+    int segmentCount = (int)std::ceilf(steps);
+    segmentCount = (segmentCount < 3)
+        ? 3
+        : segmentCount;
+
+    const int vertexCount = (segmentCount + 1) * 2;
+    const int faceCount = segmentCount * 2;
+    const int indexCount = faceCount * 3;
+
+    if (vertexCount + m_vertexPointer > m_vertexBufferSize ||
+        indexCount + m_indexPointer > m_indexBufferSize)
+    {
+        return false;
+    }
+
+    const float angleStep = (params.endAngle - params.startAngle) / segmentCount;
+
+    for (int i = 0; i <= segmentCount; ++i) {
+        float angle0 = angleStep * i + params.startAngle;
+        const float x0 = std::cosf(angle0);
+        const float y0 = std::sinf(angle0);
+
+        if (angle0 >= params.endAngle) angle0 = params.endAngle;
+        else if (angle0 <= params.startAngle) angle0 = params.startAngle;
+
+        const ysVector outerPos =
+            ysMath::LoadVector(
+                    x0 * params.outerRadius + params.center_x,
+                    y0 * params.outerRadius + params.center_y, 0.0f, 1.0f);
+        const ysVector innerPos =
+            ysMath::LoadVector(
+                    x0 * params.innerRadius + params.center_x,
+                    y0 * params.innerRadius + params.center_y, 0.0f, 1.0f);
+
+        dbasic::Vertex *outerVertex = writeVertex();
+        outerVertex->Normal = ysMath::Constants::ZAxis;
+        outerVertex->Pos = outerPos;
+        outerVertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+        dbasic::Vertex *innerVertex = writeVertex();
+        innerVertex->Normal = ysMath::Constants::ZAxis;
+        innerVertex->Pos = innerPos;
+        innerVertex->TexCoord = ysVector2(0.0f, 0.0f);
+    }
+
+#define OUTER(i) (((i)) * 2)
+#define INNER(i) (((i)) * 2 + 1)
+
+    for (int i = 0; i < segmentCount; ++i) {
+        writeFace(INNER(i), OUTER(i + 1), INNER(i + 1));
+        writeFace(INNER(i), OUTER(i), OUTER(i + 1));
+    }
+
+    return true;
+}
+
+bool GeometryGenerator::generateCircle2d(
+        const Circle2dParameters &params)
+{
+    // edge_length = (sin(theta) * radius) * 2
+    // theta = arcsin(edge_length / (2 * radius))
+
+    startSubshape();
+
+    const float angle = std::asinf(params.maxEdgeLength / (2 * params.radius));
+    const float steps = ysMath::Constants::TWO_PI / angle;
+
+    int segmentCount = (int)std::ceilf(steps);
+    segmentCount = (segmentCount < 3)
+        ? 3
+        : segmentCount;
+
+    const int vertexCount = 1 + segmentCount;
+    const int faceCount = segmentCount;
+    const int indexCount = faceCount * 3;
+
+    if (vertexCount + m_vertexPointer > m_vertexBufferSize ||
+        indexCount + m_indexPointer > m_indexBufferSize)
+    {
+        return false;
+    }
+
+    // Generate center vertex
+    dbasic::Vertex *centerVertex = writeVertex();
+    centerVertex->Normal = ysMath::Constants::ZAxis;
+    centerVertex->Pos = ysMath::LoadVector(params.center_x, params.center_y);
+    centerVertex->TexCoord = ysVector2(0.5f, 0.5f);
+
+    const float angleStep = ysMath::Constants::TWO_PI / segmentCount;
+
+    for (int i = 0; i < segmentCount; ++i) {
+        const float angle0 = angleStep * i;
+        const float x0 = std::cosf(angle0);
+        const float y0 = std::sinf(angle0);
+
+        const ysVector pos = ysMath::LoadVector(
+                params.center_x + x0 * params.radius,
+                params.center_y + y0 * params.radius, 0.0f, 1.0f);
+
+        dbasic::Vertex *newVertex = writeVertex();
+        newVertex->Normal = ysMath::Constants::ZAxis;
+        newVertex->Pos = pos;
+        newVertex->TexCoord = ysVector2(0.5f * x0 + 0.5f, 0.5f * y0 + 0.5f);
+    }
+
+    for (int i = 0; i < segmentCount; ++i) {
+        writeFace(0, i + 1, 1 + ((i + 1) % segmentCount));
+    }
+
+    return true;
 }
 
 dbasic::Vertex *GeometryGenerator::writeVertex() {
     return &m_vertexData[m_vertexPointer++];
 }
 
+void GeometryGenerator::startShape() {
+    m_currentShape.BaseIndex = m_indexPointer;
+    m_currentShape.BaseVertex = m_vertexPointer;
+    m_currentShape.FaceCount = 0;
+    m_currentShape.VertexData = &m_vertexData[m_vertexPointer];
+}
+
+void GeometryGenerator::endShape(GeometryIndices *indices) {
+    *indices = m_currentShape;
+}
+
+void GeometryGenerator::startSubshape() {
+    m_currentVertexIndex = m_vertexPointer - m_currentShape.BaseVertex;
+}
+
 void GeometryGenerator::writeFace(unsigned short i0, unsigned short i1, unsigned short i2) {
-    m_indexData[m_indexPointer] = i0;
-    m_indexData[m_indexPointer + 1] = i1;
-    m_indexData[m_indexPointer + 2] = i2;
+    m_indexData[m_indexPointer + 0] = i0 + m_currentVertexIndex;
+    m_indexData[m_indexPointer + 1] = i1 + m_currentVertexIndex;
+    m_indexData[m_indexPointer + 2] = i2 + m_currentVertexIndex;
+
+    ++m_currentShape.FaceCount;
 
     m_indexPointer += 3;
 }
