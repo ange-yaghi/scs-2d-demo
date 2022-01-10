@@ -3,6 +3,8 @@
 
 #include "geometry_generator.h"
 
+#include "demo.h"
+
 #include "delta.h"
 
 class DemoApplication {
@@ -17,8 +19,6 @@ public:
 public:
     DemoApplication();
     virtual ~DemoApplication();
-
-    static DemoApplication *createApplication(Application application);
 
     void initialize(void *instance, ysContextObject::DeviceAPI api);
     void run();
@@ -39,17 +39,18 @@ public:
             float thickness,
             float cornerRadius);
     void drawGrid();
+    void drawFixedPositionConstraint(float x, float y);
 
     float pixelsToUnits(float pixels) const;
     float unitsToPixels(float units) const;
 
-protected:
-    void renderScene();
+    int getScreenWidth() const { return m_engine.GetScreenWidth(); }
+    int getScreenHeight() const { return m_engine.GetScreenHeight(); }
+
+    void addDemo(Demo *demo);
 
 protected:
-    virtual void initialize();
-    virtual void process(float dt);
-    virtual void render();
+    void renderScene();
 
     dbasic::ShaderSet m_shaderSet;
     dbasic::DefaultShaders m_shaders;
@@ -69,6 +70,10 @@ protected:
     ysGPUBuffer *m_geometryIndexBuffer;
 
     GeometryGenerator m_geometryGenerator;
+
+    int m_activeDemo;
+    std::vector<Demo *> m_demos;
+    bool m_paused;
 };
 
 #endif /* ATG_SCS_2D_DEMO_DEMO_APPLICATION_H */

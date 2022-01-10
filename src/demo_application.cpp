@@ -1,6 +1,6 @@
 #include "../include/demo_application.h"
 
-#include "../include/double_pendulum_application.h"
+#include "../include/double_pendulum_demo.h"
 
 #include <cmath>
 
@@ -15,19 +15,12 @@ DemoApplication::DemoApplication() {
     m_geometryIndexBuffer = nullptr;
 
     m_displayHeight = 10.0f;
+    m_paused = true;
+    m_activeDemo = 0;
 }
 
 DemoApplication::~DemoApplication() {
     /* void */
-}
-
-DemoApplication *DemoApplication::createApplication(Application application) {
-    switch (application) {
-    case Application::DoublePendulum:
-        return new DoublePendulumApplication;
-    default:
-        return nullptr;
-    }
 }
 
 void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api) {
@@ -79,28 +72,25 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
 
     m_geometryGenerator.initialize(50000, 100000);
 
-    initialize();
-}
-
-void DemoApplication::initialize() {
-    m_shaders.SetClearColor(ysColor::srgbiToLinear(0x101213));
-    m_assetManager.CompileInterchangeFile((m_assetPath + "/icosphere").c_str(), 1.0f, true);
-    m_assetManager.LoadSceneFile((m_assetPath + "/icosphere").c_str(), true);
-}
-
-void DemoApplication::process(float dt) {
-    /* void */
-}
-
-void DemoApplication::render() {
-    /* void */
+    addDemo(new DoublePendulumDemo);
 }
 
 void DemoApplication::run() {
     while (m_engine.IsOpen()) {
         m_engine.StartFrame();
 
-        process(m_engine.GetFrameLength());
+        if (m_engine.ProcessKeyDown(ysKey::Code::Space)) {
+            m_paused = !m_paused;
+        }
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::R)) {
+            m_demos[m_activeDemo]->initialize();
+        }
+
+        if (!m_paused || m_engine.ProcessKeyDown(ysKey::Code::Right)) {
+            m_demos[m_activeDemo]->process(m_engine.GetFrameLength());
+        }
+
         renderScene();
 
         m_engine.EndFrame();
@@ -361,6 +351,33 @@ void DemoApplication::drawGrid() {
     drawGenerated(main);
 }
 
+void DemoApplication::drawFixedPositionConstraint(float x, float y) {
+    GeometryGenerator::Ring2dParameters ringParams;
+    ringParams.center_x = x;
+    ringParams.center_y = y;
+    ringParams.startAngle = 0.0;
+    ringParams.endAngle = ysMath::Constants::TWO_PI;
+    ringParams.innerRadius = pixelsToUnits(25.0);
+    ringParams.outerRadius = pixelsToUnits(50.0);
+    ringParams.maxEdgeLength = pixelsToUnits(1.0f);
+
+    GeometryGenerator::GeometryIndices indices;
+    
+    m_geometryGenerator.startShape();
+    m_geometryGenerator.generateRing2d(ringParams);
+    m_geometryGenerator.endShape(&indices);
+
+    // Draw geometry
+    m_shaders.ResetBrdfParameters();
+    m_shaders.SetColorReplace(true);
+    m_shaders.SetLit(false);
+    m_shaders.SetFogFar(2001);
+    m_shaders.SetFogNear(2000.0);
+    m_shaders.SetObjectTransform(ysMath::LoadIdentity());
+    m_shaders.SetBaseColor(ysColor::srgbiToLinear(0xEF4545));
+    drawGenerated(indices);
+}
+
 float DemoApplication::pixelsToUnits(float pixels) const {
     const float f = m_displayHeight / m_engine.GetGameWindow()->GetGameHeight();
     return pixels * f;
@@ -372,6 +389,8 @@ float DemoApplication::unitsToPixels(float units) const {
 }
 
 void DemoApplication::renderScene() {
+    m_shaders.SetClearColor(ysColor::linearToSrgb(ysColor::srgbiToLinear(0x101213)));
+
     const int screenWidth = m_engine.GetGameWindow()->GetGameWidth();
     const int screenHeight = m_engine.GetGameWindow()->GetGameHeight();
 
@@ -394,7 +413,7 @@ void DemoApplication::renderScene() {
 
     m_geometryGenerator.reset();
 
-    render();
+    m_demos[m_activeDemo]->render();
 
     m_engine.GetDevice()->EditBufferDataRange(
         m_geometryVertexBuffer,
@@ -407,4 +426,10 @@ void DemoApplication::renderScene() {
         (char *)m_geometryGenerator.getIndexData(),
         sizeof(unsigned short) * m_geometryGenerator.getCurrentIndexCount(),
         0);
+}
+
+void DemoApplication::addDemo(Demo *demo) {
+    m_demos.push_back(demo);
+    demo->initialize();
+    demo->setApplication(this);
 }

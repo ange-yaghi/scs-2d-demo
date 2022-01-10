@@ -11,15 +11,25 @@ set(CMAKE_CXX_STANDARD 11)
 add_executable(scs-2d-demo WIN32
     # Source files
     src/main.cpp
-    src/double_pendulum_application.cpp
+    src/double_pendulum_demo.cpp
     src/geometry_generator.cpp
     src/demo_application.cpp
+    src/demo.cpp
+    src/demo_object.cpp
+    src/bar_object.cpp
+    src/gravity_object.cpp
+    src/link_constraint.cpp
 
     # Include files
     include/delta.h
-    include/double_pendulum_application.h
+    include/double_pendulum_demo.h
     include/geometry_generator.h
-    include/double_pendulum_application.h
+    include/demo.h
+    include/demo_application.h
+    include/demo_object.h
+    include/bar_object.h
+    include/gravity_object.h
+    include/link_constraint.h
 )
 
 target_link_libraries(scs-2d-demo
