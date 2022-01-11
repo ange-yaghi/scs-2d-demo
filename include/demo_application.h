@@ -39,7 +39,8 @@ public:
             float thickness,
             float cornerRadius);
     void drawGrid();
-    void drawFixedPositionConstraint(float x, float y);
+    void drawFixedPositionConstraint(float x, float y, float angle);
+    void drawSpring(float x0, float y0, float x1, float y1, int coils);
 
     float pixelsToUnits(float pixels) const;
     float unitsToPixels(float units) const;
@@ -74,6 +75,12 @@ protected:
     int m_activeDemo;
     std::vector<Demo *> m_demos;
     bool m_paused;
+
+    ysVector m_background;
+    ysVector m_foreground;
+    ysVector m_shadow;
+    ysVector m_highlight1;
+    ysVector m_highlight2;
 };
 
 #endif /* ATG_SCS_2D_DEMO_DEMO_APPLICATION_H */

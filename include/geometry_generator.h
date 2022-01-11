@@ -55,6 +55,13 @@ public:
         float maxEdgeLength = 2.0f;
     };
 
+    struct Rhombus2dParameters {
+        float center_x = 0.0f, center_y = 0.0f;
+        float height;
+        float shear;
+        float width;
+    };
+
     struct FrameParameters {
         float x, y;
         float frameWidth, frameHeight;
@@ -78,8 +85,8 @@ public:
     const dbasic::Vertex *getVertexData() const { return m_vertexData; }
     const unsigned short *getIndexData() const { return m_indexData; }
 
-    int getCurrentVertexCount() const { return m_vertexPointer; }
-    int getCurrentIndexCount() const { return m_indexPointer; }
+    int getCurrentVertexCount() const { return m_state.vertexPointer; }
+    int getCurrentIndexCount() const { return m_state.indexPointer; }
 
     void reset();
 
@@ -123,13 +130,22 @@ public:
     bool generateCircle2d(
         const Circle2dParameters &params);
 
+    bool generateRhombus(
+        const Rhombus2dParameters &params);
+
+    bool generateIsoscelesTriangle(
+        float x, float y, float width, float height);
+
     void startShape();
     void endShape(GeometryIndices *indices);
 
 protected:
     void startSubshape();
+
     dbasic::Vertex *writeVertex();
     void writeFace(unsigned short i0, unsigned short i1, unsigned short i2);
+
+    bool checkCapacity(int vertexCount, int indexCount);
 
 protected:
     static ysVector findOrthogonal(const ysVector &v);
@@ -141,11 +157,12 @@ protected:
     int m_vertexBufferSize;
     int m_indexBufferSize;
 
-    int m_vertexPointer;
-    int m_indexPointer;
-
-    GeometryIndices m_currentShape;
-    int m_currentVertexIndex;
+    struct State {
+        int vertexPointer;
+        int indexPointer;
+        GeometryIndices currentShape;
+        int subshapeVertexPointer;
+    } m_state;
 };
 
 #endif /* ATG_SCS_2D_DEMO_GEOMETRY_GENERATOR_H */

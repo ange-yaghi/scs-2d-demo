@@ -6,6 +6,7 @@
 #include "bar_object.h"
 #include "gravity_object.h"
 #include "link_constraint.h"
+#include "spring_object.h"
 #include "scs.h"
 
 class DoublePendulumDemo : public Demo {
@@ -28,8 +29,11 @@ class DoublePendulumDemo : public Demo {
         LinkConstraint m_link1;
         LinkConstraint m_link2;
 
+        SpringObject m_spring;
+
         atg_scs::FixedPositionConstraint m_c0;
         atg_scs::FixedPositionConstraint m_c1;
+        atg_scs::StaticForceGenerator m_f;
     
         double m_r0;
         double m_r1;
