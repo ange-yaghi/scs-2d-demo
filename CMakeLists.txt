@@ -20,6 +20,8 @@ add_executable(scs-2d-demo WIN32
     src/gravity_object.cpp
     src/link_constraint.cpp
     src/spring_object.cpp
+    src/disk_object.cpp
+    src/line_constraint.cpp
 
     # Include files
     include/delta.h
@@ -32,6 +34,8 @@ add_executable(scs-2d-demo WIN32
     include/gravity_object.h
     include/link_constraint.h
     include/spring_object.h
+    include/disk_object.h
+    include/line_constraint
 )
 
 target_link_libraries(scs-2d-demo

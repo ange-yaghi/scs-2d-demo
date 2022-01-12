@@ -13,6 +13,7 @@ class Demo {
         Demo();
         virtual ~Demo();
 
+        void reset();
         void setName(const std::string &name);
         void setApplication(DemoApplication *application);
 

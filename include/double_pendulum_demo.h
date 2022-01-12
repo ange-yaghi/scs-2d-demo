@@ -4,9 +4,11 @@
 #include "demo.h"
 
 #include "bar_object.h"
+#include "disk_object.h"
 #include "gravity_object.h"
 #include "link_constraint.h"
 #include "spring_object.h"
+#include "line_constraint.h"
 #include "scs.h"
 
 class DoublePendulumDemo : public Demo {
@@ -24,12 +26,17 @@ class DoublePendulumDemo : public Demo {
         BarObject m_pendulum1;
         BarObject m_pendulum2;
     
+        DiskObject m_disk;
+    
         GravityObject m_gravity;
         LinkConstraint m_link0;
         LinkConstraint m_link1;
         LinkConstraint m_link2;
 
-        SpringObject m_spring;
+        LineConstraint m_line;
+
+        SpringObject m_spring0;
+        SpringObject m_spring1;
 
         atg_scs::FixedPositionConstraint m_c0;
         atg_scs::FixedPositionConstraint m_c1;

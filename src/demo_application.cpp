@@ -23,6 +23,8 @@ DemoApplication::DemoApplication() {
     m_shadow = ysColor::srgbiToLinear(0x101213);
     m_highlight1 = ysColor::srgbiToLinear(0xFFFFFF);
     m_highlight2 = ysColor::srgbiToLinear(0xFFFFFF);
+
+    m_uiScale = 1.0f;
 }
 
 DemoApplication::~DemoApplication() {
@@ -90,6 +92,7 @@ void DemoApplication::run() {
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::R)) {
+            m_demos[m_activeDemo]->reset();
             m_demos[m_activeDemo]->initialize();
         }
 
@@ -113,7 +116,7 @@ void DemoApplication::destroy() {
     m_engine.Destroy();
 }
 
-void DemoApplication::drawGenerated(const GeometryGenerator::GeometryIndices &indices) {
+void DemoApplication::drawGenerated(const GeometryGenerator::GeometryIndices &indices, int layer) {
     m_engine.DrawGeneric(
         m_shaders.GetRegularFlags(),
         m_geometryIndexBuffer,
@@ -121,17 +124,22 @@ void DemoApplication::drawGenerated(const GeometryGenerator::GeometryIndices &in
         sizeof(dbasic::Vertex),
         indices.BaseIndex,
         indices.BaseVertex,
-        indices.FaceCount);
+        indices.FaceCount,
+        true,
+        layer);
 }
 
 void DemoApplication::drawBar(
         float x,
         float y,
         float theta,
-        float length)
+        float length,
+        float width_px)
 {
     GeometryGenerator::GeometryIndices
-        bar, barShadow, end, endShadows;
+        bar, shadow, bolts;
+
+    const float shadowWidth = 6.0f;
 
     GeometryGenerator::Line2dParameters lineParams;
     lineParams.x0 = -length / 2;
@@ -139,23 +147,17 @@ void DemoApplication::drawBar(
     lineParams.x1 = length / 2;
     lineParams.y1 = 0.0;
 
-    m_geometryGenerator.startShape();
-    lineParams.lineWidth = pixelsToUnits(10);
-    m_geometryGenerator.generateLine2d(lineParams);
-    m_geometryGenerator.endShape(&bar);
-
-    m_geometryGenerator.startShape();
-    lineParams.lineWidth = pixelsToUnits(16);
-    m_geometryGenerator.generateLine2d(lineParams);
-    m_geometryGenerator.endShape(&barShadow);
-
     GeometryGenerator::Circle2dParameters circleParams;
     circleParams.center_y = 0.0;
     circleParams.maxEdgeLength = pixelsToUnits(2.0f);
 
-    // Bar ends
+    // Bar
     m_geometryGenerator.startShape();
-    circleParams.radius = pixelsToUnits(10);
+
+    lineParams.lineWidth = pixelsToUnits(width_px) * m_uiScale;
+    m_geometryGenerator.generateLine2d(lineParams);
+
+    circleParams.radius = pixelsToUnits(width_px / 2) * m_uiScale;
     
     circleParams.center_x = -length / 2;
     m_geometryGenerator.generateCircle2d(circleParams);
@@ -163,11 +165,14 @@ void DemoApplication::drawBar(
     circleParams.center_x = length / 2;
     m_geometryGenerator.generateCircle2d(circleParams);
 
-    m_geometryGenerator.endShape(&end);
+    m_geometryGenerator.endShape(&bar);
 
-    // Bar end shadows
+    // Shadows 
     m_geometryGenerator.startShape();
-    circleParams.radius = pixelsToUnits(13);
+
+    lineParams.lineWidth = pixelsToUnits(width_px + shadowWidth * 2) * m_uiScale;
+    m_geometryGenerator.generateLine2d(lineParams);
+    circleParams.radius = pixelsToUnits(width_px / 2 + shadowWidth) * m_uiScale;
 
     circleParams.center_x = -length / 2;
     m_geometryGenerator.generateCircle2d(circleParams);
@@ -175,7 +180,19 @@ void DemoApplication::drawBar(
     circleParams.center_x = length / 2;
     m_geometryGenerator.generateCircle2d(circleParams);
 
-    m_geometryGenerator.endShape(&endShadows);
+    m_geometryGenerator.endShape(&shadow);
+
+    // Bolts
+    m_geometryGenerator.startShape();
+
+    circleParams.radius = pixelsToUnits(5);
+    circleParams.center_x = -length / 2;
+    m_geometryGenerator.generateCircle2d(circleParams);
+
+    circleParams.center_x = length / 2;
+    m_geometryGenerator.generateCircle2d(circleParams);
+
+    m_geometryGenerator.endShape(&bolts);
 
     // Draw shapes
     ysMatrix mat = ysMath::RotationTransform(
@@ -191,30 +208,20 @@ void DemoApplication::drawBar(
         mat);
 
     m_shaders.ResetBrdfParameters();
-    m_shaders.SetMetallic(0.8f);
-    m_shaders.SetIncidentSpecular(0.8f);
-    m_shaders.SetSpecularRoughness(0.7f);
-    m_shaders.SetSpecularMix(1.0f);
-    m_shaders.SetDiffuseMix(1.0f);
-    m_shaders.SetBaseColor(ysMath::LoadVector(1.0f, 1.0f, 1.0f, 1.0f));
     m_shaders.SetColorReplace(true);
     m_shaders.SetLit(false);
-    m_shaders.SetDiffuseTexture(nullptr);
     m_shaders.SetFogFar(2001);
     m_shaders.SetFogNear(2000.0);
     m_shaders.SetObjectTransform(mat);
 
     m_shaders.SetBaseColor(ysColor::srgbiToLinear(0x101213));
-    drawGenerated(barShadow);
+    drawGenerated(shadow);
     
     m_shaders.SetBaseColor(ysMath::LoadVector(1.0f, 1.0f, 1.0f, 1.0f));
     drawGenerated(bar);
 
     m_shaders.SetBaseColor(ysColor::srgbiToLinear(0x101213));
-    drawGenerated(endShadows);
-
-    m_shaders.SetBaseColor(ysMath::LoadVector(1.0f, 1.0f, 1.0f, 1.0f));
-    drawGenerated(end);
+    drawGenerated(bolts);
 }
 
 void DemoApplication::drawRoundedFrame(
@@ -262,7 +269,7 @@ void DemoApplication::drawRoundedFrame(
     GeometryGenerator::Ring2dParameters ringParams;
     ringParams.innerRadius = cornerRadius - thickness / 2;
     ringParams.outerRadius = cornerRadius + thickness / 2;
-    ringParams.maxEdgeLength = 1.0f;
+    ringParams.maxEdgeLength = pixelsToUnits(2.0f);
 
     const float a0 = 0;
     const float a90 = ysMath::Constants::PI / 2;
@@ -297,7 +304,7 @@ void DemoApplication::drawRoundedFrame(
     GeometryGenerator::GeometryIndices indices;
     m_geometryGenerator.endShape(&indices);
 
-    drawGenerated(indices);
+    drawGenerated(indices, BackgroundLayer);
 }
 
 void DemoApplication::drawGrid() {
@@ -348,36 +355,44 @@ void DemoApplication::drawGrid() {
     const float c0 = 0.2f, c1 = 0.05f, c2 = 0.01f;
 
     m_shaders.SetBaseColor(ysMath::LoadVector(c2, c2, c2, 1.0f));
-    drawGenerated(third);
+    drawGenerated(third, BackgroundLayer);
 
     m_shaders.SetBaseColor(ysMath::LoadVector(c1, c1, c1, 1.0f));
-    drawGenerated(second);
+    drawGenerated(second, BackgroundLayer);
 
     m_shaders.SetBaseColor(ysMath::LoadVector(c0, c0, c0, 1.0f));
-    drawGenerated(main);
+    drawGenerated(main, BackgroundLayer);
 }
 
 void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle) {
-    GeometryGenerator::GeometryIndices indices;
+    GeometryGenerator::GeometryIndices indices, pin;
 
-    const float triangleHeight = pixelsToUnits(25);
-    const float baseHeight = pixelsToUnits(5);
+    const float radius = pixelsToUnits(25.0f * m_uiScale);
+    const float boltRadius = pixelsToUnits(5) * m_uiScale;
 
     GeometryGenerator::Line2dParameters lineParams;
-    lineParams.x0 = -pixelsToUnits(20);
-    lineParams.y0 = -triangleHeight - baseHeight / 2; 
-    lineParams.x1 = pixelsToUnits(20);
-    lineParams.y1 = -triangleHeight - baseHeight / 2;
-    lineParams.lineWidth = baseHeight;
+    lineParams.x0 = -radius;
+    lineParams.y0 = lineParams.y1 = -radius / 2; 
+    lineParams.x1 = radius;
+    lineParams.lineWidth = radius;
 
     m_geometryGenerator.startShape();
-    m_geometryGenerator.generateIsoscelesTriangle(
-            0,
-            -triangleHeight,
-            pixelsToUnits(30),
-            triangleHeight);
+
+    GeometryGenerator::Circle2dParameters circleParams;
+    circleParams.center_x = circleParams.center_y = 0;
+    circleParams.radius = radius;
+    circleParams.maxEdgeLength = pixelsToUnits(2.0f);
+    m_geometryGenerator.generateCircle2d(circleParams);
     m_geometryGenerator.generateLine2d(lineParams);
     m_geometryGenerator.endShape(&indices);
+
+    m_geometryGenerator.startShape();
+
+    circleParams.center_x = circleParams.center_y = 0;
+    circleParams.radius = boltRadius;
+    m_geometryGenerator.generateCircle2d(circleParams);
+
+    m_geometryGenerator.endShape(&pin);
 
     // Draw geometry
     ysMatrix mat = ysMath::RotationTransform(
@@ -401,10 +416,20 @@ void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle)
     m_shaders.SetObjectTransform(mat);
 
     m_shaders.SetBaseColor(m_foreground);
-    drawGenerated(indices);
+    drawGenerated(indices, BackgroundLayer);
+
+    m_shaders.SetBaseColor(m_shadow);
+    drawGenerated(pin, ForegroundLayer);
 }
 
-void DemoApplication::drawSpring(float x0, float y0, float x1, float y1, int coils) {
+void DemoApplication::drawSpring(
+        float x0,
+        float y0, 
+        float x1,
+        float y1,
+        int coils,
+        float radius)
+{
     const float dx = x1 - x0;
     const float dy = y1 - y0;
     const float length = std::sqrt(dx * dx + dy * dy);
@@ -425,16 +450,20 @@ void DemoApplication::drawSpring(float x0, float y0, float x1, float y1, int coi
         coilBackShadow,
         coilFront,
         coilFrontShadow,
-        ends,
-        endShadows;
+        bolts;
 
-    const float rodThickness = pixelsToUnits(10);
-    const float coilThickness = pixelsToUnits(15);
-    const float rodShadowThickness = pixelsToUnits(16);
-    const float rodLength = pixelsToUnits(40);
-    const float retainerRadius = pixelsToUnits(75 / 2.0);
+    const float rodThickness = pixelsToUnits(20) * m_uiScale;
+    const float coilThickness = pixelsToUnits(10) * m_uiScale;
+    const float shadowThickness = pixelsToUnits(6) * m_uiScale;
+    const float rodShadowThickness = shadowThickness * 2 + rodThickness;
+    const float rodLength = pixelsToUnits(40) * m_uiScale;
+    const float retainerRadius = pixelsToUnits(radius) * m_uiScale;
     const float coilLength = length + rodThickness - rodLength * 2;
+    const float boltRadius = pixelsToUnits(5) * m_uiScale;
     
+    circleParams.center_y = 0.0;
+    circleParams.maxEdgeLength = pixelsToUnits(2.0f);
+
     // Rods
     m_geometryGenerator.startShape();
     lineParams.y0 = 0;
@@ -448,6 +477,13 @@ void DemoApplication::drawSpring(float x0, float y0, float x1, float y1, int coi
     lineParams.x0 = length / 2;
     lineParams.x1 = lineParams.x0 - rodLength;
     m_geometryGenerator.generateLine2d(lineParams);
+
+    circleParams.radius = rodThickness / 2;
+    circleParams.center_x = -length / 2;
+    m_geometryGenerator.generateCircle2d(circleParams);
+
+    circleParams.center_x = length / 2;
+    m_geometryGenerator.generateCircle2d(circleParams);
 
     m_geometryGenerator.endShape(&rods);
 
@@ -464,6 +500,13 @@ void DemoApplication::drawSpring(float x0, float y0, float x1, float y1, int coi
     lineParams.x0 = length / 2;
     lineParams.x1 = lineParams.x0 - rodLength;
     m_geometryGenerator.generateLine2d(lineParams);
+
+    circleParams.radius = rodShadowThickness / 2;
+    circleParams.center_x = -length / 2;
+    m_geometryGenerator.generateCircle2d(circleParams);
+
+    circleParams.center_x = length / 2;
+    m_geometryGenerator.generateCircle2d(circleParams);
 
     m_geometryGenerator.endShape(&rodShadows);
 
@@ -483,9 +526,9 @@ void DemoApplication::drawSpring(float x0, float y0, float x1, float y1, int coi
 
     // Retainer Shadows
     m_geometryGenerator.startShape();
-    lineParams.lineWidth = coilThickness + pixelsToUnits(6);
-    lineParams.y0 = -retainerRadius - pixelsToUnits(0);
-    lineParams.y1 = retainerRadius + pixelsToUnits(0);
+    lineParams.lineWidth = coilThickness + shadowThickness * 2;
+    lineParams.y0 = -retainerRadius;
+    lineParams.y1 = retainerRadius;
 
     lineParams.x0 = lineParams.x1 = -length / 2 + rodLength;
     m_geometryGenerator.generateLine2d(lineParams);
@@ -510,7 +553,8 @@ void DemoApplication::drawSpring(float x0, float y0, float x1, float y1, int coi
     rhombParams.shear = (fullRhombusWidth - rhombParams.width) / 2;
     
     for (int i = 0; i < coils + 1; ++i) {
-        rhombParams.center_x = -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i);
+        rhombParams.center_x =
+            -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i);
         m_geometryGenerator.generateRhombus(rhombParams);
     }
 
@@ -521,7 +565,8 @@ void DemoApplication::drawSpring(float x0, float y0, float x1, float y1, int coi
     rhombParams.shear = -rhombParams.shear;
 
     for (int i = 0; i < coils; ++i) {
-        rhombParams.center_x = -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i + 1);
+        rhombParams.center_x =
+            -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i + 1);
         m_geometryGenerator.generateRhombus(rhombParams);
     }
 
@@ -529,10 +574,11 @@ void DemoApplication::drawSpring(float x0, float y0, float x1, float y1, int coi
 
     // Coil front shadow
     m_geometryGenerator.startShape();
-    rhombParams.width = coilThickness + pixelsToUnits(6);
+    rhombParams.width = coilThickness + shadowThickness * 2;
 
     for (int i = 0; i < coils; ++i) {
-        rhombParams.center_x = -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i + 1);
+        rhombParams.center_x =
+            -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i + 1);
         m_geometryGenerator.generateRhombus(rhombParams);
     }
 
@@ -543,38 +589,24 @@ void DemoApplication::drawSpring(float x0, float y0, float x1, float y1, int coi
     rhombParams.shear = -rhombParams.shear;
 
     for (int i = 0; i < coils; ++i) {
-        rhombParams.center_x = -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i);
+        rhombParams.center_x =
+            -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i);
         m_geometryGenerator.generateRhombus(rhombParams);
     }
 
     m_geometryGenerator.endShape(&coilBackShadow);
 
-    // Ends
-    circleParams.center_y = 0.0;
-    circleParams.maxEdgeLength = pixelsToUnits(2.0f);
-
+    // Bolts
     m_geometryGenerator.startShape();
-    circleParams.radius = pixelsToUnits(10);
 
+    circleParams.radius = boltRadius;
     circleParams.center_x = -length / 2;
     m_geometryGenerator.generateCircle2d(circleParams);
 
     circleParams.center_x = length / 2;
     m_geometryGenerator.generateCircle2d(circleParams);
 
-    m_geometryGenerator.endShape(&ends);
-
-    // End shadows
-    m_geometryGenerator.startShape();
-    circleParams.radius = pixelsToUnits(13);
-
-    circleParams.center_x = -length / 2;
-    m_geometryGenerator.generateCircle2d(circleParams);
-
-    circleParams.center_x = length / 2;
-    m_geometryGenerator.generateCircle2d(circleParams);
-
-    m_geometryGenerator.endShape(&endShadows);
+    m_geometryGenerator.endShape(&bolts);
 
     // Draw geometry
     ysMatrix mat = ysMath::RotationTransform(
@@ -622,10 +654,168 @@ void DemoApplication::drawSpring(float x0, float y0, float x1, float y1, int coi
     drawGenerated(retainers);
 
     m_shaders.SetBaseColor(m_shadow);
-    drawGenerated(endShadows);
+    drawGenerated(bolts);
+}
+
+void DemoApplication::drawDisk(float x, float y, float theta, float radius) {
+    GeometryGenerator::GeometryIndices main, shadow, details;
+
+    const float minRadius = pixelsToUnits(40) * m_uiScale;
+    const float overallRadius = std::fmaxf(minRadius, radius * m_uiScale);
+    const float centerRadius = pixelsToUnits(20) * m_uiScale;
+    const float boltRadius = pixelsToUnits(5) * m_uiScale;
+    const float shadowThickness = pixelsToUnits(6) * m_uiScale;
+
+    GeometryGenerator::Circle2dParameters params;
+    params.maxEdgeLength = pixelsToUnits(2.0f);
+
+    // Overall
+    m_geometryGenerator.startShape();
+    
+    params.center_x = params.center_y = 0;
+    params.radius = overallRadius;
+    m_geometryGenerator.generateCircle2d(params);
+
+    m_geometryGenerator.endShape(&main);
+
+    // Shadows
+    m_geometryGenerator.startShape();
+
+    params.center_x = params.center_y = 0;
+    params.radius = overallRadius + shadowThickness;
+    m_geometryGenerator.generateCircle2d(params);
+
+    m_geometryGenerator.endShape(&shadow);
+
+    // Details
+    m_geometryGenerator.startShape();
+
+    params.center_x = params.center_y = 0;
+    params.radius = centerRadius;
+    m_geometryGenerator.generateCircle2d(params);
+
+    params.center_x = 0;
+    params.center_y = -(overallRadius + centerRadius) / 2;
+    params.radius = boltRadius;
+    m_geometryGenerator.generateCircle2d(params);
+
+    m_geometryGenerator.endShape(&details);
+
+    // Draw geometry
+    ysMatrix mat = ysMath::RotationTransform(
+        ysMath::LoadVector(0.0f, 0.0f, 1.0f),
+        (float)theta);
+    mat = ysMath::MatMult(
+        ysMath::TranslationTransform(
+            ysMath::LoadVector(
+                (float)x,
+                (float)y,
+                0.0f,
+                0.0f)),
+        mat);
+
+    m_shaders.ResetBrdfParameters();
+    m_shaders.SetBaseColor(ysMath::LoadVector(1.0f, 1.0f, 1.0f, 1.0f));
+    m_shaders.SetColorReplace(true);
+    m_shaders.SetLit(false);
+    m_shaders.SetFogFar(2001);
+    m_shaders.SetFogNear(2000.0);
+    m_shaders.SetObjectTransform(mat);
+
+    m_shaders.SetBaseColor(m_shadow);
+    drawGenerated(shadow);
 
     m_shaders.SetBaseColor(m_foreground);
-    drawGenerated(ends);
+    drawGenerated(main);
+
+    m_shaders.SetBaseColor(m_shadow);
+    drawGenerated(details);
+}
+
+void DemoApplication::drawLineConstraint(
+        float x,
+        float y,
+        float dx,
+        float dy,
+        float roller_x,
+        float roller_y,
+        float length)
+{
+
+    const float width = length;
+    const float height = pixelsToUnits(40.0f) * m_uiScale;
+    const float thickness = pixelsToUnits(10.0f) * m_uiScale;
+    const float sliderThickness = pixelsToUnits(10.0f) * m_uiScale;
+    const float sliderLength = pixelsToUnits(200.0f) * m_uiScale;
+    const float boltRadius = pixelsToUnits(5) * m_uiScale;
+
+    const float theta = (dy > 0)
+        ? std::acosf(dx)
+        : -std::acosf(dx);
+
+    const float local_x = roller_x - x;
+    const float local_y = roller_y - y;
+
+    GeometryGenerator::GeometryIndices slider, pin;
+    GeometryGenerator::Line2dParameters params;
+    GeometryGenerator::Circle2dParameters circleParams;
+    circleParams.maxEdgeLength = pixelsToUnits(2.0f);
+
+    m_geometryGenerator.startShape();
+
+    params.lineWidth = sliderThickness;
+    params.x0 = -sliderLength / 2 + local_x;
+    params.x1 = sliderLength / 2 + local_x;
+    params.y0 = params.y1 = local_y;
+    m_geometryGenerator.generateLine2d(params);
+
+    circleParams.center_x = params.x0;
+    circleParams.center_y = local_y;
+    circleParams.radius = sliderThickness / 2;
+    m_geometryGenerator.generateCircle2d(circleParams);
+
+    circleParams.center_x = params.x1;
+    circleParams.center_y = local_y;
+    circleParams.radius = sliderThickness / 2;
+    m_geometryGenerator.generateCircle2d(circleParams);
+
+    m_geometryGenerator.endShape(&slider);
+
+    m_geometryGenerator.startShape();
+
+    circleParams.center_x = local_x;
+    circleParams.center_y = local_y;
+    circleParams.radius = boltRadius;
+    m_geometryGenerator.generateCircle2d(circleParams);
+
+    m_geometryGenerator.endShape(&pin);
+
+    // Draw geometry
+    ysMatrix mat = ysMath::RotationTransform(
+        ysMath::LoadVector(0.0f, 0.0f, 1.0f),
+        (float)theta);
+    mat = ysMath::MatMult(
+        ysMath::TranslationTransform(
+            ysMath::LoadVector(
+                (float)x,
+                (float)y,
+                0.0f,
+                0.0f)),
+        mat);
+
+    m_shaders.ResetBrdfParameters();
+    m_shaders.SetColorReplace(true);
+    m_shaders.SetLit(false);
+    m_shaders.SetFogFar(2001);
+    m_shaders.SetFogNear(2000.0);
+    m_shaders.SetObjectTransform(mat);
+
+    m_shaders.SetBaseColor(m_foreground);
+    drawRoundedFrame(0.0f, 0.0f, width, height, thickness, height / 2.0f); 
+    drawGenerated(slider, BackgroundLayer);
+
+    m_shaders.SetBaseColor(m_shadow);
+    drawGenerated(pin, ForegroundLayer);
 }
 
 float DemoApplication::pixelsToUnits(float pixels) const {

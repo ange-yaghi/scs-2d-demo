@@ -4,17 +4,14 @@
 #include "geometry_generator.h"
 
 #include "demo.h"
+#include "bar_object.h"
 
 #include "delta.h"
 
 class DemoApplication {
 public:
-    enum class Application {
-        SimplePendulum,
-        DoublePendulum,
-        ArticulatedPendulum,
-        LineConstraintPendulum
-    };
+    static constexpr int BackgroundLayer = 0;
+    static constexpr int ForegroundLayer = 1;
 
 public:
     DemoApplication();
@@ -28,9 +25,11 @@ public:
     void setCameraTarget(const ysVector &target) { m_cameraTarget = target; }
     void setCameraUp(const ysVector &up) { m_cameraUp = up; }
 
-    void drawGenerated(const GeometryGenerator::GeometryIndices &indices);
+    void drawGenerated(
+        const GeometryGenerator::GeometryIndices &indices,
+        int layer= ForegroundLayer);
 
-    void drawBar(float x, float y, float theta, float length);
+    void drawBar(float x, float y, float theta, float length, float width_px = 20.0f);
     void drawRoundedFrame(
             float x,
             float y,
@@ -40,7 +39,22 @@ public:
             float cornerRadius);
     void drawGrid();
     void drawFixedPositionConstraint(float x, float y, float angle);
-    void drawSpring(float x0, float y0, float x1, float y1, int coils);
+    void drawSpring(
+            float x0,
+            float y0,
+            float x1,
+            float y1,
+            int coils,
+            float radius_px = 20.0f);
+    void drawDisk(float x, float y, float theta, float radius);
+    void drawLineConstraint(
+            float x,
+            float y,
+            float dx,
+            float dy,
+            float roller_x,
+            float roller_y,
+            float length);
 
     float pixelsToUnits(float pixels) const;
     float unitsToPixels(float units) const;
@@ -57,6 +71,7 @@ protected:
     dbasic::DefaultShaders m_shaders;
 
     float m_displayHeight;
+    float m_uiScale;
 
     dbasic::DeltaEngine m_engine;
     dbasic::AssetManager m_assetManager;

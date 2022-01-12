@@ -9,6 +9,10 @@ Demo::~Demo() {
     /* void */
 }
 
+void Demo::reset() {
+    m_objects.clear();
+}
+
 void Demo::setName(const std::string &name) {
     m_name = name;
 }
