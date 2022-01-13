@@ -30,7 +30,7 @@ void Demo::render() {
 }
 
 void Demo::process(float dt) {
-    /* void */
+    processObjects(dt);
 }
 
 void Demo::addObject(DemoObject *object, atg_scs::RigidBodySystem *system) {

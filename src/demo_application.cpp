@@ -1,6 +1,7 @@
 #include "../include/demo_application.h"
 
 #include "../include/double_pendulum_demo.h"
+#include "../include/motor_demo.h"
 
 #include <cmath>
 
@@ -21,7 +22,7 @@ DemoApplication::DemoApplication() {
     m_background = ysColor::srgbiToLinear(0xFFFFFF);
     m_foreground = ysColor::srgbiToLinear(0xFFFFFF);
     m_shadow = ysColor::srgbiToLinear(0x101213);
-    m_highlight1 = ysColor::srgbiToLinear(0xFFFFFF);
+    m_highlight1 = ysColor::srgbiToLinear(0xEF4545);
     m_highlight2 = ysColor::srgbiToLinear(0xFFFFFF);
 
     m_uiScale = 1.0f;
@@ -81,6 +82,9 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     m_geometryGenerator.initialize(50000, 100000);
 
     addDemo(new DoublePendulumDemo);
+    addDemo(new MotorDemo);
+
+    m_activeDemo = 1;
 }
 
 void DemoApplication::run() {
@@ -741,7 +745,6 @@ void DemoApplication::drawLineConstraint(
         float roller_y,
         float length)
 {
-
     const float width = length;
     const float height = pixelsToUnits(40.0f) * m_uiScale;
     const float thickness = pixelsToUnits(10.0f) * m_uiScale;
@@ -816,6 +819,58 @@ void DemoApplication::drawLineConstraint(
 
     m_shaders.SetBaseColor(m_shadow);
     drawGenerated(pin, ForegroundLayer);
+}
+
+void DemoApplication::drawMotor(
+        float x,
+        float y,
+        float theta,
+        float radius,
+        bool positive)
+{
+    const float width = pixelsToUnits(10.0f) * m_uiScale;
+
+    GeometryGenerator::GeometryIndices arrow;
+    GeometryGenerator::Ring2dParameters params;
+
+    m_geometryGenerator.startShape();
+
+    params.arrowLength = ysMath::Constants::TWO_PI * 0.25;
+    params.arrowOnEnd = positive;
+    params.center_x = 0;
+    params.center_y = 0;
+    params.drawArrow = true;
+    params.innerRadius = radius - width / 2;
+    params.outerRadius = radius + width / 2;
+    params.maxEdgeLength = pixelsToUnits(2.0f);
+    params.startAngle = 0.25f;
+    params.endAngle = ysMath::Constants::TWO_PI - 0.25f;
+    m_geometryGenerator.generateRing2d(params);
+
+    m_geometryGenerator.endShape(&arrow);
+
+    // Draw geometry
+    ysMatrix mat = ysMath::RotationTransform(
+        ysMath::LoadVector(0.0f, 0.0f, 1.0f),
+        (float)theta);
+    mat = ysMath::MatMult(
+        ysMath::TranslationTransform(
+            ysMath::LoadVector(
+                (float)x,
+                (float)y,
+                0.0f,
+                0.0f)),
+        mat);
+
+    m_shaders.ResetBrdfParameters();
+    m_shaders.SetColorReplace(true);
+    m_shaders.SetLit(false);
+    m_shaders.SetFogFar(2001);
+    m_shaders.SetFogNear(2000.0);
+    m_shaders.SetObjectTransform(mat);
+
+    m_shaders.SetBaseColor(m_highlight1);
+    drawGenerated(arrow, BackgroundLayer);
 }
 
 float DemoApplication::pixelsToUnits(float pixels) const {

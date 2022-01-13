@@ -44,7 +44,7 @@ void DoublePendulumDemo::initialize() {
     m_spring0.m_spring.m_restLength = 5.0f;
     m_spring0.m_spring.m_p1_x = -m_r0;
     m_spring0.m_spring.m_p2_x = -m_r1 * 0.5;
-    m_spring0.m_coilCount = 8;
+    m_spring0.m_coilCount = 12;
 
     m_spring1.m_spring.m_body1 = &m_pendulum0.m_body;
     m_spring1.m_spring.m_body2 = &m_pendulum2.m_body;

@@ -55,6 +55,7 @@ public:
             float roller_x,
             float roller_y,
             float length);
+    void drawMotor(float x, float y, float theta, float radius, bool positive);
 
     float pixelsToUnits(float pixels) const;
     float unitsToPixels(float units) const;
@@ -63,6 +64,8 @@ public:
     int getScreenHeight() const { return m_engine.GetScreenHeight(); }
 
     void addDemo(Demo *demo);
+
+    dbasic::DeltaEngine *getEngine() { return &m_engine;  }
 
 protected:
     void renderScene();

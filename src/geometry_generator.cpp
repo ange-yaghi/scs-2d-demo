@@ -504,22 +504,45 @@ bool GeometryGenerator::generateRing2d(
 
     const float angleStep = (params.endAngle - params.startAngle) / segmentCount;
 
+    float arrowStart = 0.0f;
+    float arrowEnd = 0.0f;
+    if (params.drawArrow) {
+        if (params.arrowOnEnd) {
+            arrowStart = params.endAngle - params.arrowLength;
+            arrowEnd = params.endAngle;
+        }
+        else {
+            arrowStart = params.startAngle + params.arrowLength;
+            arrowEnd = params.startAngle;
+        }
+    }
+
+    const float midRadius = (params.outerRadius + params.innerRadius) / 2;
+    const float fullWidth = params.outerRadius - params.innerRadius;
     for (int i = 0; i <= segmentCount; ++i) {
         float angle0 = angleStep * i + params.startAngle;
         const float x0 = std::cosf(angle0);
         const float y0 = std::sinf(angle0);
+
+        const float s = (params.drawArrow)
+            ? (angle0 - arrowStart) / (arrowEnd - arrowStart)
+            : 0.0;
+
+        const float width = fullWidth * (1 - std::fmin(1.0, std::fmax(s, 0.0)));
+        const float innerRadius = midRadius - width / 2;
+        const float outerRadius = midRadius + width / 2;
 
         if (angle0 >= params.endAngle) angle0 = params.endAngle;
         else if (angle0 <= params.startAngle) angle0 = params.startAngle;
 
         const ysVector outerPos =
             ysMath::LoadVector(
-                    x0 * params.outerRadius + params.center_x,
-                    y0 * params.outerRadius + params.center_y, 0.0f, 1.0f);
+                    x0 * outerRadius + params.center_x,
+                    y0 * outerRadius + params.center_y, 0.0f, 1.0f);
         const ysVector innerPos =
             ysMath::LoadVector(
-                    x0 * params.innerRadius + params.center_x,
-                    y0 * params.innerRadius + params.center_y, 0.0f, 1.0f);
+                    x0 * innerRadius + params.center_x,
+                    y0 * innerRadius + params.center_y, 0.0f, 1.0f);
 
         dbasic::Vertex *outerVertex = writeVertex();
         outerVertex->Normal = ysMath::Constants::ZAxis;

@@ -47,6 +47,10 @@ public:
         float startAngle = 0.0f, endAngle = ysMath::Constants::TWO_PI;
         float innerRadius = 0.5f, outerRadius = 1.0f;
         float maxEdgeLength = 2.0f;
+        
+        bool drawArrow = false;
+        bool arrowOnEnd = true;
+        float arrowLength = 0.0f;
     };
 
     struct Circle2dParameters {

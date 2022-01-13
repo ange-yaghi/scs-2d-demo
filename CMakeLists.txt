@@ -22,6 +22,8 @@ add_executable(scs-2d-demo WIN32
     src/spring_object.cpp
     src/disk_object.cpp
     src/line_constraint.cpp
+    src/constant_speed_motor.cpp
+    src/motor_demo.cpp
 
     # Include files
     include/delta.h
@@ -35,7 +37,9 @@ add_executable(scs-2d-demo WIN32
     include/link_constraint.h
     include/spring_object.h
     include/disk_object.h
-    include/line_constraint
+    include/line_constraint.h
+    include/constant_speed_motor.h
+    include/motor_demo.h
 )
 
 target_link_libraries(scs-2d-demo
