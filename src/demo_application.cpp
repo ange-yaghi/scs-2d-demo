@@ -4,6 +4,7 @@
 #include "../include/motor_demo.h"
 
 #include <cmath>
+#include <sstream>
 
 DemoApplication::DemoApplication() {
     m_cameraTarget = ysMath::Constants::Zero;
@@ -17,6 +18,7 @@ DemoApplication::DemoApplication() {
 
     m_displayHeight = 10.0f;
     m_paused = true;
+    m_showingStats = true;
     m_activeDemo = 0;
 
     m_background = ysColor::srgbiToLinear(0xFFFFFF);
@@ -37,7 +39,7 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     dbasic::Path confPath = modulePath.Append("delta.conf");
 
     std::string enginePath = "../dependencies/submodules/delta-studio/engines/basic";
-    m_assetPath = "../assets";
+    m_assetPath = "../assets/";
     if (confPath.Exists()) {
         std::fstream confFile(confPath.ToString(), std::ios::in);
         
@@ -58,7 +60,7 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     settings.DepthBuffer = false;
     settings.Instance = instance;
     settings.ShaderDirectory = shaderPath.c_str();
-    settings.WindowTitle = "Engine Sim | AngeTheGreat";
+    settings.WindowTitle = "Simple 2D Constraint Solver Demo | AngeTheGreat";
     settings.WindowPositionX = 0;
     settings.WindowPositionY = 0;
     settings.WindowStyle = ysWindow::WindowStyle::Windowed;
@@ -71,6 +73,8 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     m_engine.SetShaderSet(&m_shaderSet);
 
     m_assetManager.SetEngine(&m_engine);
+    m_assetManager.CompileInterchangeFile((m_assetPath + "assets").c_str(), 1.0f, true);
+    m_assetManager.LoadSceneFile((m_assetPath + "assets").c_str());
 
     m_shaders.SetCameraMode(dbasic::DefaultShaders::CameraMode::Target);
 
@@ -81,10 +85,17 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
 
     m_geometryGenerator.initialize(50000, 100000);
 
+    m_logo = m_assetManager.GetModelAsset("ATG_logo");
+    m_logoBackground = m_assetManager.GetModelAsset("ATG_logo_background");
+
+    m_activeDemo = 1;
+
     addDemo(new DoublePendulumDemo);
     addDemo(new MotorDemo);
 
-    m_activeDemo = 1;
+    m_textRenderer.SetEngine(&m_engine);
+    m_textRenderer.SetRenderer(m_engine.GetUiRenderer());
+    m_textRenderer.SetFont(m_engine.GetConsole()->GetFont());
 }
 
 void DemoApplication::run() {
@@ -107,6 +118,14 @@ void DemoApplication::run() {
         renderScene();
 
         m_engine.EndFrame();
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::Tab)) {
+            m_activeDemo = (m_activeDemo + 1) % (int)m_demos.size();
+        }
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::S)) {
+            m_showingStats = !m_showingStats;
+        }
     }
 }
 
@@ -312,8 +331,8 @@ void DemoApplication::drawRoundedFrame(
 }
 
 void DemoApplication::drawGrid() {
-    const float frameWidth = pixelsToUnits(m_engine.GetScreenWidth() - 100);
-    const float frameHeight = pixelsToUnits(m_engine.GetScreenHeight() - 100);
+    float frameWidth, frameHeight;
+    getGridFrameSize(&frameWidth, &frameHeight);
 
     GeometryGenerator::GridParameters gridParams;
     gridParams.x = 0.0f;
@@ -356,7 +375,7 @@ void DemoApplication::drawGrid() {
     m_shaders.SetFogNear(2000.0);
     m_shaders.SetObjectTransform(ysMath::LoadIdentity());
     
-    const float c0 = 0.2f, c1 = 0.05f, c2 = 0.01f;
+    const float c0 = 0.05f, c1 = 0.02f, c2 = 0.01f;
 
     m_shaders.SetBaseColor(ysMath::LoadVector(c2, c2, c2, 1.0f));
     drawGenerated(third, BackgroundLayer);
@@ -366,6 +385,23 @@ void DemoApplication::drawGrid() {
 
     m_shaders.SetBaseColor(ysMath::LoadVector(c0, c0, c0, 1.0f));
     drawGenerated(main, BackgroundLayer);
+
+    // Draw logo
+    const float logoModelHeight = 2.59f;
+    const float logoUiHeight = pixelsToUnits(92) * m_uiScale;
+
+    m_shaders.SetObjectTransform(
+        ysMath::MatMult(
+            ysMath::TranslationTransform(
+                ysMath::LoadVector(frameWidth / 2 - 0.5f, -frameHeight / 2 + 0.5f)),
+            ysMath::ScaleTransform(ysMath::LoadScalar(logoUiHeight / logoModelHeight))
+        ));
+
+    m_shaders.SetBaseColor(m_shadow);
+    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_logoBackground, BackgroundLayer);
+
+    m_shaders.SetBaseColor(ysMath::LoadVector(c0, c0, c0, 1.0f));
+    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_logo, ForegroundLayer);
 }
 
 void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle) {
@@ -836,14 +872,14 @@ void DemoApplication::drawMotor(
     m_geometryGenerator.startShape();
 
     params.arrowLength = ysMath::Constants::TWO_PI * 0.25;
-    params.arrowOnEnd = positive;
+    params.arrowOnEnd = !positive;
     params.center_x = 0;
     params.center_y = 0;
     params.drawArrow = true;
     params.innerRadius = radius - width / 2;
     params.outerRadius = radius + width / 2;
     params.maxEdgeLength = pixelsToUnits(2.0f);
-    params.startAngle = 0.25f;
+    params.startAngle = 1.0f;
     params.endAngle = ysMath::Constants::TWO_PI - 0.25f;
     m_geometryGenerator.generateRing2d(params);
 
@@ -873,6 +909,126 @@ void DemoApplication::drawMotor(
     drawGenerated(arrow, BackgroundLayer);
 }
 
+void DemoApplication::renderTitle() {
+    if (!m_showingStats) return;
+
+    GeometryGenerator::FrameParameters frameParams;
+    GeometryGenerator::Line2dParameters lineParams;
+    GeometryGenerator::GeometryIndices frame, fill;
+
+    float gridWidth, gridHeight;
+    getGridFrameSize(&gridWidth, &gridHeight);
+
+    const float leftMargin = pixelsToUnits(50.0f);
+    const float topMargin = pixelsToUnits(50.0f);
+    const float titleBoxHeight = pixelsToUnits(180.0f);
+    const float titleBoxWidth = pixelsToUnits(500.0f);
+    const float lineWidth = pixelsToUnits(1.0f);
+
+    m_geometryGenerator.startShape();
+
+    frameParams.frameHeight = titleBoxHeight;
+    frameParams.frameWidth = titleBoxWidth;
+    frameParams.x = frameParams.y = 0;
+    frameParams.lineWidth = lineWidth;
+    m_geometryGenerator.generateFrame(frameParams);
+
+    m_geometryGenerator.endShape(&frame);
+
+    m_geometryGenerator.startShape();
+
+    lineParams.lineWidth = titleBoxHeight;
+    lineParams.x0 = -titleBoxWidth / 2;
+    lineParams.x1 = titleBoxWidth / 2;
+    lineParams.y0 = lineParams.y1 = 0;
+    m_geometryGenerator.generateLine2d(lineParams);
+
+    m_geometryGenerator.endShape(&fill);
+
+    // Draw geometry
+    ysMatrix mat = ysMath::TranslationTransform(
+            ysMath::LoadVector(
+                (float)-gridWidth / 2 + leftMargin + titleBoxWidth / 2,
+                (float)gridHeight / 2 - topMargin - titleBoxHeight / 2,
+                0.0f,
+                0.0f));
+
+    m_shaders.ResetBrdfParameters();
+    m_shaders.SetColorReplace(true);
+    m_shaders.SetLit(false);
+    m_shaders.SetFogFar(2001);
+    m_shaders.SetFogNear(2000.0);
+    m_shaders.SetObjectTransform(mat);
+
+    m_shaders.SetBaseColor(m_shadow);
+    drawGenerated(fill, ForegroundLayer);
+
+    m_shaders.SetBaseColor(m_foreground);
+    drawGenerated(frame, ForegroundLayer);
+
+    float p_y = unitsToPixels(gridHeight / 2 - topMargin) - 36;
+    m_textRenderer.RenderText(
+        m_demos[m_activeDemo]->getName(),
+        unitsToPixels(-gridWidth / 2 + leftMargin) + 10,
+        p_y,
+        32
+    );
+
+    p_y -= 32;
+    m_textRenderer.RenderText(
+        "RATES",
+        unitsToPixels(-gridWidth / 2 + leftMargin) + 10,
+        p_y,
+        26
+    );
+
+    m_textRenderer.RenderText(
+        "PROFILING",
+        unitsToPixels(-gridWidth / 2 + leftMargin + titleBoxWidth / 2) + 10,
+        p_y,
+        26
+    );
+
+    p_y -= 20;
+    std::stringstream ss;
+    const long freq =
+        std::lroundf(m_demos[m_activeDemo]->getSteps() / m_demos[m_activeDemo]->getTimestep());
+
+    ss << "FR = " << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";
+    ss << "SR = " << freq << " HZ      \n";
+    ss << "STEPS = " << m_demos[m_activeDemo]->getSteps() << " us     \n";
+    m_textRenderer.RenderText(
+        ss.str(),
+        unitsToPixels(-gridWidth / 2 + leftMargin) + 10,
+        p_y,
+        16
+    );
+
+    ss = std::stringstream();
+
+    ss << "F-EVAL = " << m_demos[m_activeDemo]->getForceEvalMicroseconds() << " us       \n";
+    ss << "C-EVAL = " << m_demos[m_activeDemo]->getConstraintEvalMicroseconds() << " us      \n";
+    ss << "C-SOLVE = " << m_demos[m_activeDemo]->getConstraintSolveMicroseconds() << " us     \n";
+    ss << "ODE = " << m_demos[m_activeDemo]->getOdeSolveMicroseconds() << " us        \n";
+    m_textRenderer.RenderText(
+        ss.str(),
+        unitsToPixels(-gridWidth / 2 + leftMargin + titleBoxWidth / 2) + 10,
+        p_y,
+        16
+    );
+    
+    p_y -= 5 * 16;
+
+    m_textRenderer.RenderText(
+        (m_paused)
+            ? "PAUSED // OKAY     "
+            : "RUNNING // OKAY     ",
+        unitsToPixels(-gridWidth / 2 + leftMargin) + 10,
+        p_y,
+        26
+    );
+}
+
 float DemoApplication::pixelsToUnits(float pixels) const {
     const float f = m_displayHeight / m_engine.GetGameWindow()->GetGameHeight();
     return pixels * f;
@@ -881,6 +1037,11 @@ float DemoApplication::pixelsToUnits(float pixels) const {
 float DemoApplication::unitsToPixels(float units) const {
     const float f = m_engine.GetGameWindow()->GetGameHeight() / m_displayHeight;
     return units * f;
+}
+
+void DemoApplication::getGridFrameSize(float *w, float *h) const {
+    *w = pixelsToUnits(m_engine.GetScreenWidth() - 100);
+    *h = pixelsToUnits(m_engine.GetScreenHeight() - 100);
 }
 
 void DemoApplication::renderScene() {
@@ -909,6 +1070,7 @@ void DemoApplication::renderScene() {
     m_geometryGenerator.reset();
 
     m_demos[m_activeDemo]->render();
+    renderTitle();
 
     m_engine.GetDevice()->EditBufferDataRange(
         m_geometryVertexBuffer,

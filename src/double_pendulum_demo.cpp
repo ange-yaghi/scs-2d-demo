@@ -5,7 +5,7 @@
 #include <sstream>
 
 DoublePendulumDemo::DoublePendulumDemo() {
-    /* void */
+    setName("Mechanism");
 }
 
 DoublePendulumDemo::~DoublePendulumDemo() {
@@ -122,6 +122,13 @@ void DoublePendulumDemo::initialize() {
 
 void DoublePendulumDemo::process(float dt) {
     m_rigidBodySystem.process(1 / 60.0, 100);
+
+    m_steps = 100;
+    m_dt = 1 / 60.0f;
+    m_odeSolveMicroseconds = m_rigidBodySystem.getOdeSolveMicroseconds();
+    m_forceEvalMicroseconds = m_rigidBodySystem.getForceEvalMicroseconds();
+    m_constraintEvalMicroseconds = m_rigidBodySystem.getConstraintEvalMicroseconds();
+    m_constraintSolveMicroseconds = m_rigidBodySystem.getConstraintSolveMicroseconds();
 }
 
 void DoublePendulumDemo::render() {

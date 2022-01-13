@@ -5,7 +5,7 @@
 #include <sstream>
 
 MotorDemo::MotorDemo() {
-    /* void */
+    setName("Constant Speed Motor");
 }
 
 MotorDemo::~MotorDemo() {
@@ -70,11 +70,18 @@ void MotorDemo::process(float dt) {
     m_rigidBodySystem.process(1 / 60.0, 1);
 
     if (m_app->getEngine()->IsKeyDown(ysKey::Code::A)) {
-        m_motor.m_motor.m_speed = 20.0;
+        m_motor.m_motor.m_speed = 4.0;
     }
     else {
         m_motor.m_motor.m_speed = 2.0;
     }
+
+    m_steps = 1;
+    m_dt = 1 / 60.0f;
+    m_odeSolveMicroseconds = m_rigidBodySystem.getOdeSolveMicroseconds();
+    m_forceEvalMicroseconds = m_rigidBodySystem.getForceEvalMicroseconds();
+    m_constraintEvalMicroseconds = m_rigidBodySystem.getConstraintEvalMicroseconds();
+    m_constraintSolveMicroseconds = m_rigidBodySystem.getConstraintSolveMicroseconds();
 }
 
 void MotorDemo::render() {

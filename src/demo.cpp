@@ -3,6 +3,12 @@
 Demo::Demo() {
     m_app = nullptr;
     m_name = "";
+
+    m_steps = 1;
+    m_odeSolveMicroseconds = 0;
+    m_forceEvalMicroseconds = 0;
+    m_constraintEvalMicroseconds = 0;
+    m_constraintSolveMicroseconds = 0;
 }
 
 Demo::~Demo() {

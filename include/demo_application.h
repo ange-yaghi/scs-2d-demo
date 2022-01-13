@@ -56,9 +56,11 @@ public:
             float roller_y,
             float length);
     void drawMotor(float x, float y, float theta, float radius, bool positive);
+    void renderTitle();
 
     float pixelsToUnits(float pixels) const;
     float unitsToPixels(float units) const;
+    void getGridFrameSize(float *w, float *h) const;
 
     int getScreenWidth() const { return m_engine.GetScreenWidth(); }
     int getScreenHeight() const { return m_engine.GetScreenHeight(); }
@@ -93,12 +95,18 @@ protected:
     int m_activeDemo;
     std::vector<Demo *> m_demos;
     bool m_paused;
+    bool m_showingStats;
 
     ysVector m_background;
     ysVector m_foreground;
     ysVector m_shadow;
     ysVector m_highlight1;
     ysVector m_highlight2;
+
+    dbasic::ModelAsset *m_logo;
+    dbasic::ModelAsset *m_logoBackground;
+
+    dbasic::TextRenderer m_textRenderer;
 };
 
 #endif /* ATG_SCS_2D_DEMO_DEMO_APPLICATION_H */

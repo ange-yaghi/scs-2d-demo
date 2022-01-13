@@ -21,6 +21,15 @@ class Demo {
         virtual void render();
         virtual void process(float dt);
 
+        std::string getName() const { return m_name; }
+
+        int getSteps() const { return m_steps; }
+        float getTimestep() const { return m_dt; }
+        float getOdeSolveMicroseconds() const { return m_odeSolveMicroseconds; }
+        float getForceEvalMicroseconds() const { return m_forceEvalMicroseconds; }
+        float getConstraintEvalMicroseconds() const { return m_constraintEvalMicroseconds; }
+        float getConstraintSolveMicroseconds() const { return m_constraintSolveMicroseconds; }
+
     protected:
         void addObject(DemoObject *object, atg_scs::RigidBodySystem *system);
         
@@ -31,6 +40,13 @@ class Demo {
         std::string m_name;
 
         std::vector<DemoObject *> m_objects;
+
+        int m_steps;
+        float m_dt;
+        float m_odeSolveMicroseconds;
+        float m_forceEvalMicroseconds;
+        float m_constraintEvalMicroseconds;
+        float m_constraintSolveMicroseconds;
 };
 
 #endif /* ATG_SCS_2D_DEMO_DEMO_H */
