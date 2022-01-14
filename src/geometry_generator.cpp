@@ -665,6 +665,45 @@ bool GeometryGenerator::generateRhombus(
     return true;
 }
 
+bool GeometryGenerator::generateTrapezoid2d(const Trapezoid2dParameters &params) {
+    startSubshape();
+
+    if (!checkCapacity(3, 3)) {
+        return false;
+    }
+
+    dbasic::Vertex *vertex;
+
+    vertex = writeVertex();
+    vertex->Normal = ysMath::Constants::ZAxis;
+    vertex->Pos = ysMath::LoadVector(
+        params.center_x - params.base / 2, params.center_y - params.height / 2);
+    vertex->TexCoord = ysVector2(1.0f, 1.0f);
+
+    vertex = writeVertex();
+    vertex->Normal = ysMath::Constants::ZAxis;
+    vertex->Pos = ysMath::LoadVector(
+        params.center_x + params.base / 2, params.center_y - params.height / 2);
+    vertex->TexCoord = ysVector2(0.0f, 1.0f);
+
+    vertex = writeVertex();
+    vertex->Normal = ysMath::Constants::ZAxis;
+    vertex->Pos = ysMath::LoadVector(
+        params.center_x - params.top / 2, params.center_y + params.height / 2);
+    vertex->TexCoord = ysVector2(1.0f, 0.0f);
+
+    vertex = writeVertex();
+    vertex->Normal = ysMath::Constants::ZAxis;
+    vertex->Pos = ysMath::LoadVector(
+        params.center_x + params.top / 2, params.center_y + params.height / 2);
+    vertex->TexCoord = ysVector2(1.0f, 0.0f);
+
+    writeFace(0, 1, 2);
+    writeFace(1, 3, 2);
+
+    return true;
+}
+
 bool GeometryGenerator::generateIsoscelesTriangle(
         float x,
         float y,

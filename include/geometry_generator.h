@@ -61,9 +61,16 @@ public:
 
     struct Rhombus2dParameters {
         float center_x = 0.0f, center_y = 0.0f;
-        float height;
-        float shear;
-        float width;
+        float height = 0;
+        float shear = 0;
+        float width = 0;
+    };
+
+    struct Trapezoid2dParameters {
+        float center_x = 0, center_y = 0;
+        float height = 0;
+        float base = 0;
+        float top = 0;
     };
 
     struct FrameParameters {
@@ -136,6 +143,9 @@ public:
 
     bool generateRhombus(
         const Rhombus2dParameters &params);
+
+    bool generateTrapezoid2d(
+        const Trapezoid2dParameters &params);
 
     bool generateIsoscelesTriangle(
         float x, float y, float width, float height);

@@ -405,10 +405,13 @@ void DemoApplication::drawGrid() {
 }
 
 void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle) {
-    GeometryGenerator::GeometryIndices indices, pin;
+    GeometryGenerator::GeometryIndices indices, pin, shadow;
 
     const float radius = pixelsToUnits(25.0f * m_uiScale);
     const float boltRadius = pixelsToUnits(5) * m_uiScale;
+    const float supportWidth = pixelsToUnits(150.0f) * m_uiScale;
+    const float supportThickness = pixelsToUnits(5.0f) * m_uiScale;
+    const float shadowThickness = pixelsToUnits(5.0f) * m_uiScale;
 
     GeometryGenerator::Line2dParameters lineParams;
     lineParams.x0 = -radius;
@@ -424,7 +427,24 @@ void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle)
     circleParams.maxEdgeLength = pixelsToUnits(2.0f);
     m_geometryGenerator.generateCircle2d(circleParams);
     m_geometryGenerator.generateLine2d(lineParams);
+
+    lineParams.lineWidth = supportThickness;
+    lineParams.x0 = -supportWidth / 2;
+    lineParams.x1 = supportWidth / 2;
+    lineParams.y0 = lineParams.y1 = -radius - shadowThickness - supportThickness / 2; 
+    m_geometryGenerator.generateLine2d(lineParams);
+
     m_geometryGenerator.endShape(&indices);
+
+    m_geometryGenerator.startShape();
+
+    lineParams.lineWidth = shadowThickness;
+    lineParams.x0 = -radius;
+    lineParams.x1 = radius;
+    lineParams.y0 = lineParams.y1 = -radius - shadowThickness / 2;
+    m_geometryGenerator.generateLine2d(lineParams);
+
+    m_geometryGenerator.endShape(&shadow);
 
     m_geometryGenerator.startShape();
 
@@ -459,6 +479,9 @@ void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle)
     drawGenerated(indices, BackgroundLayer);
 
     m_shaders.SetBaseColor(m_shadow);
+    drawGenerated(shadow, BackgroundLayer);
+
+    m_shaders.SetBaseColor(m_shadow);
     drawGenerated(pin, ForegroundLayer);
 }
 
@@ -480,6 +503,7 @@ void DemoApplication::drawSpring(
     GeometryGenerator::Line2dParameters lineParams;
     GeometryGenerator::Rhombus2dParameters rhombParams;
     GeometryGenerator::Circle2dParameters circleParams;
+    GeometryGenerator::Trapezoid2dParameters trapParams;
 
     GeometryGenerator::GeometryIndices
         rods,
@@ -498,7 +522,7 @@ void DemoApplication::drawSpring(
     const float rodShadowThickness = shadowThickness * 2 + rodThickness;
     const float rodLength = pixelsToUnits(40) * m_uiScale;
     const float retainerRadius = pixelsToUnits(radius) * m_uiScale;
-    const float coilLength = length + rodThickness - rodLength * 2;
+    const float coilLength = length + rodThickness / 2 - rodLength * 2;
     const float boltRadius = pixelsToUnits(5) * m_uiScale;
     
     circleParams.center_y = 0.0;
@@ -567,30 +591,34 @@ void DemoApplication::drawSpring(
     // Retainer Shadows
     m_geometryGenerator.startShape();
     lineParams.lineWidth = coilThickness + shadowThickness * 2;
-    lineParams.y0 = -retainerRadius;
-    lineParams.y1 = retainerRadius;
 
+    lineParams.y0 = -retainerRadius;
+    lineParams.y1 = retainerRadius + shadowThickness;
     lineParams.x0 = lineParams.x1 = -length / 2 + rodLength;
     m_geometryGenerator.generateLine2d(lineParams);
 
+    lineParams.y0 = -retainerRadius - shadowThickness;
+    lineParams.y1 = retainerRadius;
     lineParams.x0 = lineParams.x1 = length / 2 - rodLength;
     m_geometryGenerator.generateLine2d(lineParams);
 
     m_geometryGenerator.endShape(&retainerShadows);
 
     // Coil
-    rhombParams.height = 2 * retainerRadius;
     rhombParams.width = coilThickness;
     rhombParams.center_y = 0;
 
     // Coil back
     m_geometryGenerator.startShape();
+    rhombParams.height = 2 * retainerRadius;
 
     const float rhombSegment = (coilLength - coilThickness) / (2 * coils + 1);
     const float fullRhombusWidth = rhombSegment + coilThickness;
 
     // full_rhombus_width = width + 2 * shear
-    rhombParams.shear = (fullRhombusWidth - rhombParams.width) / 2;
+    const float rawShear = (fullRhombusWidth - rhombParams.width) / 2;
+
+    rhombParams.shear = rawShear;
     
     for (int i = 0; i < coils + 1; ++i) {
         rhombParams.center_x =
@@ -602,6 +630,7 @@ void DemoApplication::drawSpring(
 
     // Coil front
     m_geometryGenerator.startShape();
+    rhombParams.height = 2 * retainerRadius;
     rhombParams.shear = -rhombParams.shear;
 
     for (int i = 0; i < coils; ++i) {
@@ -614,12 +643,24 @@ void DemoApplication::drawSpring(
 
     // Coil front shadow
     m_geometryGenerator.startShape();
+    trapParams.height = shadowThickness;
+    trapParams.base = coilThickness + shadowThickness * 2;
+    trapParams.top = trapParams.base - (rawShear / retainerRadius) * shadowThickness * 2;
     rhombParams.width = coilThickness + shadowThickness * 2;
+    rhombParams.height = 2 * retainerRadius;
+    rhombParams.shear = -rawShear;
 
-    for (int i = 0; i < coils; ++i) {
-        rhombParams.center_x =
-            -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i + 1);
-        m_geometryGenerator.generateRhombus(rhombParams);
+    for (int i = 0; i < coils + 1; ++i) {
+        if (i < coils) {
+            rhombParams.center_x =
+                -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i + 1);
+            m_geometryGenerator.generateRhombus(rhombParams);
+        }
+
+        trapParams.center_x =
+            -shadowThickness - coilLength / 2.0f + rhombSegment * (2 * i + 1) + trapParams.base / 2;
+        trapParams.center_y = retainerRadius + shadowThickness / 2;
+        m_geometryGenerator.generateTrapezoid2d(trapParams);
     }
 
     m_geometryGenerator.endShape(&coilFrontShadow);
@@ -627,11 +668,18 @@ void DemoApplication::drawSpring(
     // Coil back shadow
     m_geometryGenerator.startShape();
     rhombParams.shear = -rhombParams.shear;
+    trapParams.top = coilThickness + shadowThickness * 2;
+    trapParams.base = trapParams.top - (rawShear / retainerRadius) * shadowThickness * 2;
 
-    for (int i = 0; i < coils; ++i) {
+    for (int i = 0; i < coils + 1; ++i) {
         rhombParams.center_x =
             -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i);
         m_geometryGenerator.generateRhombus(rhombParams);
+
+        trapParams.center_x =
+            -shadowThickness - coilLength / 2.0f + rhombSegment * (2 * i) + trapParams.top / 2;
+        trapParams.center_y = -(retainerRadius + shadowThickness / 2);
+        m_geometryGenerator.generateTrapezoid2d(trapParams);
     }
 
     m_geometryGenerator.endShape(&coilBackShadow);
@@ -996,7 +1044,7 @@ void DemoApplication::renderTitle() {
 
     ss << "FR = " << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";
     ss << "SR = " << freq << " HZ      \n";
-    ss << "STEPS = " << m_demos[m_activeDemo]->getSteps() << " us     \n";
+    ss << "STEPS = " << m_demos[m_activeDemo]->getSteps() << "     \n";
     m_textRenderer.RenderText(
         ss.str(),
         unitsToPixels(-gridWidth / 2 + leftMargin) + 10,
@@ -1045,7 +1093,7 @@ void DemoApplication::getGridFrameSize(float *w, float *h) const {
 }
 
 void DemoApplication::renderScene() {
-    m_shaders.SetClearColor(ysColor::linearToSrgb(ysColor::srgbiToLinear(0x101213)));
+    m_shaders.SetClearColor(ysColor::linearToSrgb(m_shadow));
 
     const int screenWidth = m_engine.GetGameWindow()->GetGameWidth();
     const int screenHeight = m_engine.GetGameWindow()->GetGameHeight();

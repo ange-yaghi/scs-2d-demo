@@ -22,6 +22,28 @@ class DoublePendulumDemo : public Demo {
     
     protected:
         atg_scs::RigidBodySystem m_rigidBodySystem;
+        BarObject m_pendulum0;
+        BarObject m_pendulum1;
+        BarObject m_pendulum2;
+    
+        DiskObject m_disk;
+    
+        GravityObject m_gravity;
+        LinkConstraint m_link0;
+        LinkConstraint m_link1;
+        LinkConstraint m_link2;
+
+        LineConstraint m_line;
+
+        SpringObject m_spring0;
+        SpringObject m_spring1;
+
+        atg_scs::FixedPositionConstraint m_c0;
+        atg_scs::FixedPositionConstraint m_c1;
+        atg_scs::StaticForceGenerator m_f;
+    
+        double m_r0;
+        double m_r1;
 };
 
 #endif /* ATG_SCS_2D_DEMO_DOUBLE_PENDULUM_DEMO_H */

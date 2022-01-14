@@ -25,7 +25,7 @@ void SpringObject::render(DemoApplication *app) {
 
     double x1, y1, x2, y2;
     m_spring.getEnds(&x1, &y1, &x2, &y2);
-    app->drawSpring((float)x1, (float)y1, (float)x2, (float)y2, m_coilCount);
+    app->drawSpring((float)x1, (float)y1, (float)x2, (float)y2, m_coilCount, 30.0f);
 }
 
 void SpringObject::process(float dt, DemoApplication *app) {

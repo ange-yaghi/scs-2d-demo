@@ -24,6 +24,7 @@ add_executable(scs-2d-demo WIN32
     src/line_constraint.cpp
     src/constant_speed_motor.cpp
     src/motor_demo.cpp
+    src/fixed_position_constraint.cpp
 
     # Include files
     include/delta.h
@@ -40,6 +41,7 @@ add_executable(scs-2d-demo WIN32
     include/line_constraint.h
     include/constant_speed_motor.h
     include/motor_demo.h
+    include/fixed_position_constraint.h
 )
 
 target_link_libraries(scs-2d-demo
