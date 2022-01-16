@@ -2,6 +2,8 @@
 
 #include "../include/double_pendulum_demo.h"
 #include "../include/motor_demo.h"
+#include "../include/mechanism_demo.h"
+#include "../include/rolling_demo.h"
 
 #include <cmath>
 #include <sstream>
@@ -88,10 +90,12 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     m_logo = m_assetManager.GetModelAsset("ATG_logo");
     m_logoBackground = m_assetManager.GetModelAsset("ATG_logo_background");
 
-    m_activeDemo = 1;
+    m_activeDemo = 0;
 
-    addDemo(new DoublePendulumDemo);
-    addDemo(new MotorDemo);
+    //addDemo(new DoublePendulumDemo);
+    addDemo(new RollingDemo);
+    //addDemo(new MotorDemo);
+    //addDemo(new MechanismDemo);
 
     m_textRenderer.SetEngine(&m_engine);
     m_textRenderer.SetRenderer(m_engine.GetUiRenderer());
@@ -1024,7 +1028,7 @@ void DemoApplication::renderTitle() {
 
     p_y -= 32;
     m_textRenderer.RenderText(
-        "RATES",
+        "INFO",
         unitsToPixels(-gridWidth / 2 + leftMargin) + 10,
         p_y,
         26
@@ -1045,6 +1049,7 @@ void DemoApplication::renderTitle() {
     ss << "FR = " << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";
     ss << "SR = " << freq << " HZ      \n";
     ss << "STEPS = " << m_demos[m_activeDemo]->getSteps() << "     \n";
+    ss << "ENERGY = " << m_demos[m_activeDemo]->energy() << "      \n";
     m_textRenderer.RenderText(
         ss.str(),
         unitsToPixels(-gridWidth / 2 + leftMargin) + 10,

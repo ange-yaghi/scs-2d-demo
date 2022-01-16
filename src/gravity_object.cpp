@@ -27,3 +27,16 @@ void GravityObject::render(DemoApplication *app) {
 void GravityObject::process(float dt, DemoApplication *app) {
     DemoObject::process(dt, app);
 }
+
+double GravityObject::energy() const {
+    double totalPotential = 0;
+
+    const int n = m_system->getRigidBodyCount();
+    for (int i = 0; i < n; ++i) {
+        atg_scs::RigidBody *body = m_system->getRigidBody(i);
+        const double p_y = body->p_y;
+        totalPotential += m_gravity.m_g * body->m * p_y;
+    }
+
+    return totalPotential;
+}

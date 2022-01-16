@@ -26,6 +26,7 @@ class Demo {
         virtual void initialize();
         virtual void render();
         virtual void process(float dt);
+        double energy(atg_scs::RigidBodySystem *system = nullptr);
 
         std::string getName() const { return m_name; }
 

@@ -38,3 +38,7 @@ void DiskObject::configure(float radius, float density) {
     m_body.m = density * (double)ysMath::Constants::PI * radius * radius;
     m_body.I = 0.5 * m_body.m * radius * radius;
 }
+
+double DiskObject::energy() const {
+    return m_body.energy();
+}

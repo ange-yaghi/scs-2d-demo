@@ -39,6 +39,10 @@ void BarObject::process(float dt, DemoApplication *app) {
 void BarObject::configure(float length, float density) {
     m_length = length;
 
-    m_body.m = length * density;
-    m_body.I = (1 / 12.0) * m_body.m * (length * length);
+    m_body.m = (double)length * density;
+    m_body.I = (1 / 12.0) * m_body.m * ((double)length * length);
+}
+
+double BarObject::energy() const {
+    return m_body.energy();
 }

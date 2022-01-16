@@ -51,6 +51,17 @@ void Demo::process(float dt) {
     processObjects(dt);
 }
 
+double Demo::energy(atg_scs::RigidBodySystem *system) {
+    double energy = 0;
+    for (DemoObject *object : m_objects) {
+        if (object->getSystem() == system || system == nullptr) {
+            energy += object->energy();
+        }
+    }
+
+    return energy;
+}
+
 void Demo::clear() {
     for (DemoObject *obj : m_objects) {
         delete obj;
@@ -132,11 +143,11 @@ BarObject *Demo::createLinkedBar(double x, double y, double density) {
     BarObject *newBar = createObject<BarObject>(m_targetSystem);
     newBar->m_body.theta = theta;
     
-    double cx, cy, ex, ey;
-    newBar->m_body.worldToLocal(m_cursor_x, m_cursor_y, &cx, &cy);
-    newBar->m_body.worldToLocal(-length / 2, 0, &ex, &ey);
-    newBar->m_body.p_x = cx - ex;
-    newBar->m_body.p_y = cy - ey;
+    double ex, ey, px, py;
+    newBar->m_body.localToWorld(-length / 2, 0, &ex, &ey);
+
+    newBar->m_body.p_x = m_cursor_x - ex;
+    newBar->m_body.p_y = m_cursor_y - ey;
 
     newBar->configure(length, density);    
 

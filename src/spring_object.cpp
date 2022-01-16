@@ -31,3 +31,7 @@ void SpringObject::render(DemoApplication *app) {
 void SpringObject::process(float dt, DemoApplication *app) {
     DemoObject::process(dt, app);
 }
+
+double SpringObject::energy() const {
+    return m_spring.energy();
+}

@@ -2,6 +2,7 @@
 
 DemoObject::DemoObject() {
     m_visible = false;
+    m_system = nullptr;
 }
 
 DemoObject::~DemoObject() {
@@ -9,7 +10,7 @@ DemoObject::~DemoObject() {
 }
 
 void DemoObject::initialize(atg_scs::RigidBodySystem *system) {
-    /* void */
+    m_system = system;
 }
 
 void DemoObject::reset() {
@@ -22,4 +23,8 @@ void DemoObject::render(DemoApplication *app) {
 
 void DemoObject::process(float dt, DemoApplication *app) {
     /* void */
+}
+
+double DemoObject::energy() const {
+    return 0;
 }

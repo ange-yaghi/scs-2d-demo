@@ -12,6 +12,7 @@ class BarObject : public DemoObject {
         virtual void reset();
         virtual void render(DemoApplication *app);
         virtual void process(float dt, DemoApplication *app);
+        virtual double energy() const;
 
         void configure(float length, float density);
 

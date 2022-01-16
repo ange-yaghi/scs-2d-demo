@@ -1,5 +1,5 @@
-#ifndef ATG_SCS_2D_DEMO_DOUBLE_PENDULUM_DEMO_H
-#define ATG_SCS_2D_DEMO_DOUBLE_PENDULUM_DEMO_H
+#ifndef ATG_SCS_2D_DEMO_MECHANISM_DEMO_H
+#define ATG_SCS_2D_DEMO_MECHANISM_DEMO_H
 
 #include "demo.h"
 
@@ -11,10 +11,10 @@
 #include "line_constraint.h"
 #include "scs.h"
 
-class DoublePendulumDemo : public Demo {
+class MechanismDemo : public Demo {
     public:
-        DoublePendulumDemo();
-        virtual ~DoublePendulumDemo();
+        MechanismDemo();
+        virtual ~MechanismDemo();
     
         virtual void initialize();
         virtual void process(float dt);
@@ -46,4 +46,4 @@ class DoublePendulumDemo : public Demo {
         double m_r1;
 };
 
-#endif /* ATG_SCS_2D_DEMO_DOUBLE_PENDULUM_DEMO_H */
+#endif /* ATG_SCS_2D_DEMO_MECHANISM_DEMO_H */

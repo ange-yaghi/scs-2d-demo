@@ -44,9 +44,9 @@ void MotorDemo::initialize() {
     m_motor.m_local_x = m_motor.m_local_y = 0;
     m_motor.m_motor.m_body0 = &m_motorMount;
     m_motor.m_motor.m_body1 = &m_bar0.m_body;
-    m_motor.m_motor.m_ks = 100.0;
+    m_motor.m_motor.m_ks = 75.0;
     m_motor.m_motor.m_kd = 0.5;
-    m_motor.m_motor.m_maxTorque = 1000;
+    m_motor.m_motor.m_maxTorque = 100;
     m_motor.m_motor.m_speed = 2.0;
     
     m_rigidBodySystem.reset();

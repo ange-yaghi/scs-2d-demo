@@ -1,18 +1,18 @@
-#include "../include/double_pendulum_demo.h"
+#include "../include/mechanism_demo.h"
 
 #include "../include/demo_application.h"
 
 #include <sstream>
 
-DoublePendulumDemo::DoublePendulumDemo() {
+MechanismDemo::MechanismDemo() {
     setName("Mechanism");
 }
 
-DoublePendulumDemo::~DoublePendulumDemo() {
+MechanismDemo::~MechanismDemo() {
     /* void */
 }
 
-void DoublePendulumDemo::initialize() {
+void MechanismDemo::initialize() {
     const double rodDensity = 1.0;
 
     m_r0 = 1.5;
@@ -120,7 +120,7 @@ void DoublePendulumDemo::initialize() {
     //addObject(&m_link2, &m_rigidBodySystem);
 }
 
-void DoublePendulumDemo::process(float dt) {
+void MechanismDemo::process(float dt) {
     m_rigidBodySystem.process(1 / 60.0, 100);
 
     m_steps = 100;
@@ -131,7 +131,7 @@ void DoublePendulumDemo::process(float dt) {
     m_constraintSolveMicroseconds = m_rigidBodySystem.getConstraintSolveMicroseconds();
 }
 
-void DoublePendulumDemo::render() {
+void MechanismDemo::render() {
     m_app->drawGrid();
 
     renderObjects();
