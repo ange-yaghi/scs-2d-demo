@@ -27,8 +27,6 @@ void DoublePendulumDemo::initialize() {
     BarObject *bar0 = createLinkedBar(2.0, 1.0, 1.0);
     FixedPositionConstraint *constraint = fixObject(0, 1);
     constraint->m_angle = ysMath::Constants::PI;
-    constraint->m_link.m_ks = 500;
-    constraint->m_link.m_kd = 10;
 
     BarObject *bar1 = createLinkedBar(4.0, 1.0, 1.0);
     DiskObject *disk = createLinkedDisk(0.5, 1.0);

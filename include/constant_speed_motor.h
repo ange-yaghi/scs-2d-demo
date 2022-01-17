@@ -16,6 +16,7 @@ class ConstantSpeedMotor : public DemoObject {
         atg_scs::ConstantSpeedMotor m_motor;
         float m_local_x;
         float m_local_y;
+        float m_radius;
 
     public:
         float m_theta;

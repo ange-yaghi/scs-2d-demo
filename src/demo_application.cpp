@@ -92,10 +92,10 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
 
     m_activeDemo = 0;
 
-    //addDemo(new DoublePendulumDemo);
     addDemo(new RollingDemo);
-    //addDemo(new MotorDemo);
-    //addDemo(new MechanismDemo);
+    addDemo(new DoublePendulumDemo);
+    addDemo(new MotorDemo);
+    addDemo(new MechanismDemo);
 
     m_textRenderer.SetEngine(&m_engine);
     m_textRenderer.SetRenderer(m_engine.GetUiRenderer());
@@ -105,6 +105,8 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
 void DemoApplication::run() {
     while (m_engine.IsOpen()) {
         m_engine.StartFrame();
+
+        m_displayHeight = (10.0f / 1080) * getScreenHeight();
 
         if (m_engine.ProcessKeyDown(ysKey::Code::Space)) {
             m_paused = !m_paused;
@@ -917,6 +919,8 @@ void DemoApplication::drawMotor(
         bool positive)
 {
     const float width = pixelsToUnits(10.0f) * m_uiScale;
+
+    const float shadowThickness = pixelsToUnits(6) * m_uiScale;
 
     GeometryGenerator::GeometryIndices arrow;
     GeometryGenerator::Ring2dParameters params;

@@ -143,7 +143,7 @@ BarObject *Demo::createLinkedBar(double x, double y, double density) {
     BarObject *newBar = createObject<BarObject>(m_targetSystem);
     newBar->m_body.theta = theta;
     
-    double ex, ey, px, py;
+    double ex, ey;
     newBar->m_body.localToWorld(-length / 2, 0, &ex, &ey);
 
     newBar->m_body.p_x = m_cursor_x - ex;
@@ -156,10 +156,10 @@ BarObject *Demo::createLinkedBar(double x, double y, double density) {
         m_activeBody->worldToLocal(m_cursor_x, m_cursor_y, &x0, &y0); 
 
         LinkConstraint *link = createObject<LinkConstraint>(m_targetSystem);
-        link->m_link.setBody1(m_activeBody);
-        link->m_link.setBody2(&newBar->m_body);
-        link->m_link.setLocalPosition1(x0, y0);
-        link->m_link.setLocalPosition2(-length / 2, 0);
+        link->m_link.setBody2(m_activeBody);
+        link->m_link.setBody1(&newBar->m_body);
+        link->m_link.setLocalPosition2(x0, y0);
+        link->m_link.setLocalPosition1(-length / 2, 0);
     }
 
     double new_x, new_y;
@@ -170,6 +170,18 @@ BarObject *Demo::createLinkedBar(double x, double y, double density) {
     m_activeBody = &newBar->m_body;
 
     return newBar;
+}
+
+EmptyObject *Demo::createEmpty(EmptyObject::Style style) {
+    EmptyObject *newEmpty =
+        createObject<EmptyObject>(m_targetSystem);
+    newEmpty->m_body.p_x = m_cursor_x;
+    newEmpty->m_body.p_y = m_cursor_y;
+    newEmpty->m_style = style;
+
+    m_activeBody = &newEmpty->m_body;
+
+    return newEmpty;
 }
 
 DiskObject *Demo::createLinkedDisk(double r, double density) {
@@ -205,21 +217,25 @@ SpringObject *Demo::connectSpring(atg_scs::RigidBody *target, double x, double y
     newSpring->m_spring.m_body1->worldToLocal(m_cursor_x, m_cursor_y, &lx0, &ly0);
     newSpring->m_spring.m_body2->worldToLocal(x, y, &lx1, &ly1);
 
+    const double dx = x - m_cursor_x;
+    const double dy = y - m_cursor_y;
+
     newSpring->m_spring.m_p1_x = lx0;
     newSpring->m_spring.m_p1_y = ly0;
     newSpring->m_spring.m_p2_x = lx1;
     newSpring->m_spring.m_p2_y = ly1;
+    newSpring->m_spring.m_restLength = std::sqrt(dx * dx + dy * dy);
 
     return newSpring;
 }
 
-ConstantSpeedMotor *Demo::createMotor(atg_scs::RigidBody *base, double x, double y) {
+ConstantSpeedMotor *Demo::createMotor(atg_scs::RigidBody *base) {
     ConstantSpeedMotor *newMotor = createObject<ConstantSpeedMotor>(m_targetSystem);
     newMotor->m_motor.m_body0 = base;
     newMotor->m_motor.m_body1 = m_activeBody;
 
     double lx, ly;
-    base->worldToLocal(x, y, &lx, &ly);
+    base->worldToLocal(m_cursor_x, m_cursor_y, &lx, &ly);
 
     newMotor->m_local_x = lx;
     newMotor->m_local_y = ly;

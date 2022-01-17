@@ -5,6 +5,7 @@
 ConstantSpeedMotor::ConstantSpeedMotor() {
     m_local_x = m_local_y = 0;
     m_theta = 0;
+    m_radius = 1.0f;
 }
 
 ConstantSpeedMotor::~ConstantSpeedMotor() {
@@ -27,7 +28,7 @@ void ConstantSpeedMotor::render(DemoApplication *app) {
     double x, y;
     m_motor.m_body0->localToWorld(m_local_x, m_local_y, &x, &y);
 
-    app->drawMotor((float)x, (float)y, m_theta, 1.0f, m_motor.m_speed > 0);
+    app->drawMotor((float)x, (float)y, m_theta, m_radius, m_motor.m_speed > 0);
 }
 
 void ConstantSpeedMotor::process(float dt, DemoApplication *app) {

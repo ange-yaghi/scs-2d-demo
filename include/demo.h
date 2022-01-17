@@ -8,6 +8,7 @@
 #include "spring_object.h"
 #include "fixed_position_constraint.h"
 #include "constant_speed_motor.h"
+#include "empty_object.h"
 
 #include <string>
 #include <vector>
@@ -47,7 +48,7 @@ class Demo {
 
     protected:
         void addObject(DemoObject *object, atg_scs::RigidBodySystem *system);
-        
+
         void renderObjects();
         void processObjects(float dt);
 
@@ -76,8 +77,9 @@ class Demo {
         FixedPositionConstraint *fixObject(double x, double y);
         BarObject *createLinkedBar(double x, double y, double density);
         DiskObject *createLinkedDisk(double r, double density);
+        EmptyObject *createEmpty(EmptyObject::Style style);
         SpringObject *connectSpring(atg_scs::RigidBody *target, double x, double y);
-        ConstantSpeedMotor *createMotor(atg_scs::RigidBody *base, double x, double y);
+        ConstantSpeedMotor *createMotor(atg_scs::RigidBody *base);
         void moveBefore(DemoObject *a, DemoObject *b);
 
         atg_scs::RigidBodySystem *m_targetSystem;
