@@ -4,6 +4,8 @@
 
 LineConstraint::LineConstraint() {
     m_trackLength = 10.0f;
+    m_drawTrack = true;
+    m_sliderLength = 1.5f;
 }
 
 LineConstraint::~LineConstraint() {
@@ -37,7 +39,9 @@ void LineConstraint::render(DemoApplication *app) {
             m_constraint.m_dy,
             (float)roller_x,
             (float)roller_y,
-            m_trackLength);
+            m_trackLength,
+            m_sliderLength,
+            m_drawTrack);
 }
 
 void LineConstraint::process(float dt, DemoApplication *app) {

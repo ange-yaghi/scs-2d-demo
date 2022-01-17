@@ -45,7 +45,7 @@ public:
             float x1,
             float y1,
             int coils,
-            float radius_px = 20.0f);
+            float radius = 0.5f);
     void drawDisk(float x, float y, float theta, float radius);
     void drawLineConstraint(
             float x,
@@ -54,7 +54,9 @@ public:
             float dy,
             float roller_x,
             float roller_y,
-            float length);
+            float length,
+            float sliderLength,
+            bool drawTrack = true);
     void drawMotor(float x, float y, float theta, float radius, bool positive);
     void renderTitle();
 

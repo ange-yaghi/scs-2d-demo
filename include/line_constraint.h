@@ -15,6 +15,8 @@ class LineConstraint : public DemoObject {
 
         atg_scs::LineConstraint m_constraint;
         float m_trackLength;
+        float m_sliderLength;
+        bool m_drawTrack;
 };
 
 #endif /* ATG_SCS_2D_DEMO_LINE_CONSTRAINT_H */

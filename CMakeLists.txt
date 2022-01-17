@@ -30,6 +30,7 @@ add_executable(scs-2d-demo WIN32
     src/rolling_demo.cpp
     src/double_pendulum_demo.cpp
     src/empty_object.cpp
+    src/energy_transfer_demo.cpp
 
     # Include files
     include/delta.h
@@ -51,6 +52,7 @@ add_executable(scs-2d-demo WIN32
     include/rolling_constraint.h
     include/rolling_demo.h
     include/empty_object.h
+    include/energy_transfer_demo.h
 )
 
 target_link_libraries(scs-2d-demo

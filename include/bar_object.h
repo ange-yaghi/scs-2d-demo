@@ -15,6 +15,7 @@ class BarObject : public DemoObject {
         virtual double energy() const;
 
         void configure(float length, float density);
+        float getLength() const { return m_length; }
 
         atg_scs::RigidBody m_body;
 

@@ -16,6 +16,7 @@ class SpringObject : public DemoObject {
 
         atg_scs::Spring m_spring;
 
+        float m_radius;
         int m_coilCount;
 };
 

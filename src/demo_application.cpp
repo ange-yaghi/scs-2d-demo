@@ -4,6 +4,7 @@
 #include "../include/motor_demo.h"
 #include "../include/mechanism_demo.h"
 #include "../include/rolling_demo.h"
+#include "../include/energy_transfer_demo.h"
 
 #include <cmath>
 #include <sstream>
@@ -92,6 +93,7 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
 
     m_activeDemo = 0;
 
+    addDemo(new EnergyTransferDemo);
     addDemo(new RollingDemo);
     addDemo(new DoublePendulumDemo);
     addDemo(new MotorDemo);
@@ -527,7 +529,7 @@ void DemoApplication::drawSpring(
     const float shadowThickness = pixelsToUnits(6) * m_uiScale;
     const float rodShadowThickness = shadowThickness * 2 + rodThickness;
     const float rodLength = pixelsToUnits(40) * m_uiScale;
-    const float retainerRadius = pixelsToUnits(radius) * m_uiScale;
+    const float retainerRadius = radius;
     const float coilLength = length + rodThickness / 2 - rodLength * 2;
     const float boltRadius = pixelsToUnits(5) * m_uiScale;
     
@@ -833,13 +835,14 @@ void DemoApplication::drawLineConstraint(
         float dy,
         float roller_x,
         float roller_y,
-        float length)
+        float length,
+        float sliderLength,
+        bool drawTrack)
 {
     const float width = length;
     const float height = pixelsToUnits(40.0f) * m_uiScale;
     const float thickness = pixelsToUnits(10.0f) * m_uiScale;
     const float sliderThickness = pixelsToUnits(10.0f) * m_uiScale;
-    const float sliderLength = pixelsToUnits(200.0f) * m_uiScale;
     const float boltRadius = pixelsToUnits(5) * m_uiScale;
 
     const float theta = (dy > 0)
@@ -904,7 +907,7 @@ void DemoApplication::drawLineConstraint(
     m_shaders.SetObjectTransform(mat);
 
     m_shaders.SetBaseColor(m_foreground);
-    drawRoundedFrame(0.0f, 0.0f, width, height, thickness, height / 2.0f); 
+    if (drawTrack) drawRoundedFrame(0.0f, 0.0f, width, height, thickness, height / 2.0f); 
     drawGenerated(slider, BackgroundLayer);
 
     m_shaders.SetBaseColor(m_shadow);
