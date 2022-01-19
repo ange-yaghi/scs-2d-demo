@@ -16,6 +16,9 @@ class RollingDemo : public Demo {
     
     protected:
         atg_scs::RigidBodySystem m_rigidBodySystem;
+
+        DiskObject *m_roller;
+        Plotter *m_plotter;
 };
 
 #endif /* ATG_SCS_2D_DEMO_ROLLING_DEMO_H */

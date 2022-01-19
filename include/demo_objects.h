@@ -9,5 +9,10 @@
 #include "line_constraint.h"
 #include "constant_speed_motor.h"
 #include "rolling_constraint.h"
+#include "plotter.h"
+#include "fixed_position_constraint.h"
+#include "empty_object.h"
+#include "blob_force.h"
+#include "blob.h"
 
 #endif /* ATG_SCS_2D_DEMO_OBJECTS_H */

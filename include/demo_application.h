@@ -59,6 +59,8 @@ public:
             bool drawTrack = true);
     void drawMotor(float x, float y, float theta, float radius, bool positive);
     void renderTitle();
+    void drawLines(ysVector2 *p0, ysVector2 *p1, int n0, int n1);
+    void drawBlob(float x, float y);
 
     float pixelsToUnits(float pixels) const;
     float unitsToPixels(float units) const;
@@ -70,6 +72,7 @@ public:
     void addDemo(Demo *demo);
 
     dbasic::DeltaEngine *getEngine() { return &m_engine;  }
+    GeometryGenerator *getGenerator() { return &m_geometryGenerator; }
 
 protected:
     void renderScene();
@@ -107,6 +110,9 @@ protected:
 
     dbasic::ModelAsset *m_logo;
     dbasic::ModelAsset *m_logoBackground;
+    dbasic::ModelAsset *m_blobForeground;
+    dbasic::ModelAsset *m_blobBackground;
+    dbasic::ModelAsset *m_blobFace;
 
     dbasic::TextRenderer m_textRenderer;
 };

@@ -9,6 +9,7 @@
 #include "link_constraint.h"
 #include "spring_object.h"
 #include "line_constraint.h"
+#include "plotter.h"
 #include "scs.h"
 
 class DoublePendulumDemo : public Demo {
@@ -22,6 +23,9 @@ class DoublePendulumDemo : public Demo {
     
     protected:
         atg_scs::RigidBodySystem m_rigidBodySystem;
+
+        DiskObject *m_end;
+        Plotter *m_plotter;
 };
 
 #endif /* ATG_SCS_2D_DEMO_DOUBLE_PENDULUM_DEMO_H */

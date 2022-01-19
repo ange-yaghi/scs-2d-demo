@@ -1,7 +1,7 @@
 #include "../include/demo_object.h"
 
 DemoObject::DemoObject() {
-    m_visible = false;
+    m_visible = true;
     m_system = nullptr;
 }
 

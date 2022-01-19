@@ -5,9 +5,13 @@
 #include "../include/mechanism_demo.h"
 #include "../include/rolling_demo.h"
 #include "../include/energy_transfer_demo.h"
+#include "../include/spring_mass_demo.h"
+#include "../include/spring_cloth_demo.h"
+#include "../include/blob_game_demo.h"
 
 #include <cmath>
 #include <sstream>
+#include <cmath>
 
 DemoApplication::DemoApplication() {
     m_cameraTarget = ysMath::Constants::Zero;
@@ -30,6 +34,10 @@ DemoApplication::DemoApplication() {
     m_highlight1 = ysColor::srgbiToLinear(0xEF4545);
     m_highlight2 = ysColor::srgbiToLinear(0xFFFFFF);
 
+    m_blobBackground = nullptr;
+    m_blobForeground = nullptr;
+    m_blobFace = nullptr;
+
     m_uiScale = 1.0f;
 }
 
@@ -45,7 +53,7 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     m_assetPath = "../assets/";
     if (confPath.Exists()) {
         std::fstream confFile(confPath.ToString(), std::ios::in);
-        
+
         std::getline(confFile, enginePath);
         std::getline(confFile, m_assetPath);
         enginePath = modulePath.Append(enginePath).ToString();
@@ -91,8 +99,15 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     m_logo = m_assetManager.GetModelAsset("ATG_logo");
     m_logoBackground = m_assetManager.GetModelAsset("ATG_logo_background");
 
+    m_blobForeground = m_assetManager.GetModelAsset("Blob_foreground");
+    m_blobBackground = m_assetManager.GetModelAsset("Blob_shadow");
+    m_blobFace = m_assetManager.GetModelAsset("Blob_face");
+
     m_activeDemo = 0;
 
+    addDemo(new BlobGameDemo);
+    addDemo(new SpringMassDemo);
+    addDemo(new SpringClothDemo);
     addDemo(new EnergyTransferDemo);
     addDemo(new RollingDemo);
     addDemo(new DoublePendulumDemo);
@@ -147,7 +162,10 @@ void DemoApplication::destroy() {
     m_engine.Destroy();
 }
 
-void DemoApplication::drawGenerated(const GeometryGenerator::GeometryIndices &indices, int layer) {
+void DemoApplication::drawGenerated(
+        const GeometryGenerator::GeometryIndices &indices,
+        int layer)
+{
     m_engine.DrawGeneric(
         m_shaders.GetRegularFlags(),
         m_geometryIndexBuffer,
@@ -189,7 +207,7 @@ void DemoApplication::drawBar(
     m_geometryGenerator.generateLine2d(lineParams);
 
     circleParams.radius = pixelsToUnits(width_px / 2) * m_uiScale;
-    
+
     circleParams.center_x = -length / 2;
     m_geometryGenerator.generateCircle2d(circleParams);
 
@@ -198,7 +216,7 @@ void DemoApplication::drawBar(
 
     m_geometryGenerator.endShape(&bar);
 
-    // Shadows 
+    // Shadows
     m_geometryGenerator.startShape();
 
     lineParams.lineWidth = pixelsToUnits(width_px + shadowWidth * 2) * m_uiScale;
@@ -247,7 +265,7 @@ void DemoApplication::drawBar(
 
     m_shaders.SetBaseColor(ysColor::srgbiToLinear(0x101213));
     drawGenerated(shadow);
-    
+
     m_shaders.SetBaseColor(ysMath::LoadVector(1.0f, 1.0f, 1.0f, 1.0f));
     drawGenerated(bar);
 
@@ -284,7 +302,7 @@ void DemoApplication::drawRoundedFrame(
     params.x1 = x + width / 2 - cornerRadius;
     params.y1 = y - height / 2;
     m_geometryGenerator.generateLine2d(params);
-    
+
     params.x0 = x - width / 2;
     params.y0 = y - height / 2 + cornerRadius;
     params.x1 = x - width / 2;
@@ -307,7 +325,7 @@ void DemoApplication::drawRoundedFrame(
     const float a180 = ysMath::Constants::PI;
     const float a270 = 3 * ysMath::Constants::PI / 2;
     const float a360 = ysMath::Constants::TWO_PI;
-    
+
     ringParams.center_x = x - width / 2 + cornerRadius;
     ringParams.center_y = y - height / 2 + cornerRadius;
     ringParams.startAngle = a180;
@@ -351,7 +369,7 @@ void DemoApplication::drawGrid() {
     GeometryGenerator::FrameParameters frameParams;
     frameParams.frameHeight = frameHeight;
     frameParams.frameWidth = frameWidth;
-    frameParams.lineWidth = pixelsToUnits(2.0f); 
+    frameParams.lineWidth = pixelsToUnits(2.0f);
     frameParams.x = frameParams.y = 0.0f;
 
     GeometryGenerator::GeometryIndices main, second, third;
@@ -382,7 +400,7 @@ void DemoApplication::drawGrid() {
     m_shaders.SetFogFar(2001);
     m_shaders.SetFogNear(2000.0);
     m_shaders.SetObjectTransform(ysMath::LoadIdentity());
-    
+
     const float c0 = 0.05f, c1 = 0.02f, c2 = 0.01f;
 
     m_shaders.SetBaseColor(ysMath::LoadVector(c2, c2, c2, 1.0f));
@@ -420,10 +438,11 @@ void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle)
     const float supportWidth = pixelsToUnits(150.0f) * m_uiScale;
     const float supportThickness = pixelsToUnits(5.0f) * m_uiScale;
     const float shadowThickness = pixelsToUnits(5.0f) * m_uiScale;
+    const float maxEdgeLength = pixelsToUnits(5.0f);
 
     GeometryGenerator::Line2dParameters lineParams;
     lineParams.x0 = -radius;
-    lineParams.y0 = lineParams.y1 = -radius / 2; 
+    lineParams.y0 = lineParams.y1 = -radius / 2;
     lineParams.x1 = radius;
     lineParams.lineWidth = radius;
 
@@ -432,14 +451,14 @@ void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle)
     GeometryGenerator::Circle2dParameters circleParams;
     circleParams.center_x = circleParams.center_y = 0;
     circleParams.radius = radius;
-    circleParams.maxEdgeLength = pixelsToUnits(2.0f);
+    circleParams.maxEdgeLength = maxEdgeLength;
     m_geometryGenerator.generateCircle2d(circleParams);
     m_geometryGenerator.generateLine2d(lineParams);
 
     lineParams.lineWidth = supportThickness;
     lineParams.x0 = -supportWidth / 2;
     lineParams.x1 = supportWidth / 2;
-    lineParams.y0 = lineParams.y1 = -radius - shadowThickness - supportThickness / 2; 
+    lineParams.y0 = lineParams.y1 = -radius - shadowThickness - supportThickness / 2;
     m_geometryGenerator.generateLine2d(lineParams);
 
     m_geometryGenerator.endShape(&indices);
@@ -495,7 +514,7 @@ void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle)
 
 void DemoApplication::drawSpring(
         float x0,
-        float y0, 
+        float y0,
         float x1,
         float y1,
         int coils,
@@ -532,7 +551,7 @@ void DemoApplication::drawSpring(
     const float retainerRadius = radius;
     const float coilLength = length + rodThickness / 2 - rodLength * 2;
     const float boltRadius = pixelsToUnits(5) * m_uiScale;
-    
+
     circleParams.center_y = 0.0;
     circleParams.maxEdgeLength = pixelsToUnits(2.0f);
 
@@ -627,7 +646,7 @@ void DemoApplication::drawSpring(
     const float rawShear = (fullRhombusWidth - rhombParams.width) / 2;
 
     rhombParams.shear = rawShear;
-    
+
     for (int i = 0; i < coils + 1; ++i) {
         rhombParams.center_x =
             -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i);
@@ -730,7 +749,7 @@ void DemoApplication::drawSpring(
 
     m_shaders.SetBaseColor(m_shadow);
     drawGenerated(rodShadows);
-    
+
     m_shaders.SetBaseColor(m_foreground);
     drawGenerated(rods);
 
@@ -761,13 +780,14 @@ void DemoApplication::drawDisk(float x, float y, float theta, float radius) {
     const float centerRadius = pixelsToUnits(20) * m_uiScale;
     const float boltRadius = pixelsToUnits(5) * m_uiScale;
     const float shadowThickness = pixelsToUnits(6) * m_uiScale;
+    const float maxEdgeLength = pixelsToUnits(10.0f);
 
     GeometryGenerator::Circle2dParameters params;
-    params.maxEdgeLength = pixelsToUnits(2.0f);
+    params.maxEdgeLength = maxEdgeLength;
 
     // Overall
     m_geometryGenerator.startShape();
-    
+
     params.center_x = params.center_y = 0;
     params.radius = overallRadius;
     m_geometryGenerator.generateCircle2d(params);
@@ -907,7 +927,7 @@ void DemoApplication::drawLineConstraint(
     m_shaders.SetObjectTransform(mat);
 
     m_shaders.SetBaseColor(m_foreground);
-    if (drawTrack) drawRoundedFrame(0.0f, 0.0f, width, height, thickness, height / 2.0f); 
+    if (drawTrack) drawRoundedFrame(0.0f, 0.0f, width, height, thickness, height / 2.0f);
     drawGenerated(slider, BackgroundLayer);
 
     m_shaders.SetBaseColor(m_shadow);
@@ -922,8 +942,6 @@ void DemoApplication::drawMotor(
         bool positive)
 {
     const float width = pixelsToUnits(10.0f) * m_uiScale;
-
-    const float shadowThickness = pixelsToUnits(6) * m_uiScale;
 
     GeometryGenerator::GeometryIndices arrow;
     GeometryGenerator::Ring2dParameters params;
@@ -1067,8 +1085,8 @@ void DemoApplication::renderTitle() {
     ss = std::stringstream();
 
     ss << "F-EVAL = " << m_demos[m_activeDemo]->getForceEvalMicroseconds() << " us       \n";
-    ss << "C-EVAL = " << m_demos[m_activeDemo]->getConstraintEvalMicroseconds() << " us      \n";
-    ss << "C-SOLVE = " << m_demos[m_activeDemo]->getConstraintSolveMicroseconds() << " us     \n";
+    ss << "C-EVAL = " << m_demos[m_activeDemo]->getConstraintEvalMicroseconds() << " us  \n";
+    ss << "C-SOLVE = " << m_demos[m_activeDemo]->getConstraintSolveMicroseconds() << " us\n";
     ss << "ODE = " << m_demos[m_activeDemo]->getOdeSolveMicroseconds() << " us        \n";
     m_textRenderer.RenderText(
         ss.str(),
@@ -1076,7 +1094,7 @@ void DemoApplication::renderTitle() {
         p_y,
         16
     );
-    
+
     p_y -= 5 * 16;
 
     m_textRenderer.RenderText(
@@ -1087,6 +1105,85 @@ void DemoApplication::renderTitle() {
         p_y,
         26
     );
+}
+
+void DemoApplication::drawLines(
+        ysVector2 *p0,
+        ysVector2 *p1,
+        int n0,
+        int n1)
+{
+    if (n0 <= 0) return;
+
+    GeometryGenerator::GeometryIndices lines;
+    GeometryGenerator::PathParameters params;
+
+    params.p0 = p0;
+    params.p1 = p1;
+    params.n0 = n0;
+    params.n1 = n1;
+
+    m_geometryGenerator.startShape();
+
+    params.i = 0;
+    params.width = pixelsToUnits(0.5f);
+    m_geometryGenerator.startPath(params);
+
+    ysVector2 prev = p0[0];
+    for (int i = 1; i < n0 + n1; ++i) {
+        ysVector2 *p = (i >= n0)
+            ? p1
+            : p0;
+        const int index = (i >= n0)
+            ? i - n0
+            : i;
+        const float s = (float)(i) / (n0 + n1);
+        const ysVector2 p_i = p[index];
+        params.i = i;
+        params.width = std::fmaxf(
+            pixelsToUnits(2.0f) * s,
+            pixelsToUnits(0.5f));
+
+        if (s > 0.95f) {
+            params.width += pixelsToUnits(((s - 0.95f) / 0.05f) * 6);
+        }
+
+        m_geometryGenerator.generatePathSegment(params);
+
+        prev = p_i;
+    }
+
+    m_geometryGenerator.endShape(&lines);
+
+    m_shaders.ResetBrdfParameters();
+    m_shaders.SetColorReplace(true);
+    m_shaders.SetLit(false);
+    m_shaders.SetFogFar(2001);
+    m_shaders.SetFogNear(2000.0);
+
+    m_shaders.SetBaseColor(m_highlight1);
+    drawGenerated(lines, ForegroundLayer);
+}
+
+void DemoApplication::drawBlob(float x, float y) {
+    const float blobModelHeight = 2.94f;
+    const float blobHeight = 1.0f;
+
+    m_shaders.SetObjectTransform(
+        ysMath::MatMult(
+            ysMath::TranslationTransform(
+                ysMath::LoadVector(x, y)),
+            ysMath::ScaleTransform(ysMath::LoadScalar(blobHeight / blobModelHeight))
+        ));
+
+    m_shaders.SetBaseColor(m_shadow);
+    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_blobBackground, ForegroundLayer);
+
+    m_shaders.SetBaseColor(m_foreground);
+    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_blobForeground, ForegroundLayer);
+
+    m_shaders.SetBaseColor(m_shadow);
+    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_blobFace, ForegroundLayer);
 }
 
 float DemoApplication::pixelsToUnits(float pixels) const {
@@ -1116,7 +1213,7 @@ void DemoApplication::renderScene() {
     m_shaders.SetCameraTarget(m_cameraTarget);
     m_shaders.SetCameraUp(m_cameraUp);
     m_shaders.CalculateUiCamera();
-    
+
     if (screenWidth > 0 && screenHeight > 0) {
         const float aspectRatio = screenWidth / (float)screenHeight;
         m_shaders.SetProjection(ysMath::Transpose(
@@ -1147,6 +1244,7 @@ void DemoApplication::renderScene() {
 
 void DemoApplication::addDemo(Demo *demo) {
     m_demos.push_back(demo);
-    demo->initialize();
+
     demo->setApplication(this);
+    demo->initialize();
 }

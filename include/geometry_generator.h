@@ -56,7 +56,8 @@ public:
     struct Circle2dParameters {
         float center_x = 0.0f, center_y = 0.0f;
         float radius = 1.0f;
-        float maxEdgeLength = 2.0f;
+        float maxEdgeLength = 0.1f;
+        float smallestAngle = ysMath::Constants::PI * 0.95f;
     };
 
     struct Rhombus2dParameters {
@@ -84,6 +85,20 @@ public:
         float width, height;
         float div_x, div_y;
         float lineWidth;
+    };
+
+    struct PathParameters {
+        ysVector2 *p0;
+        ysVector2 *p1;
+        int n0;
+        int n1;
+
+        int i = 0;
+        float width;
+
+        int v0 = -1;
+        int v1 = -1;
+        float pdir_x, pdir_y;
     };
 
 public:
@@ -149,6 +164,9 @@ public:
 
     bool generateIsoscelesTriangle(
         float x, float y, float width, float height);
+
+    bool startPath(PathParameters &params);
+    bool generatePathSegment(PathParameters &params);
 
     void startShape();
     void endShape(GeometryIndices *indices);

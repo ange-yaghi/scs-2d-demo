@@ -75,7 +75,7 @@ void Demo::clear() {
 }
 
 void Demo::addObject(DemoObject *object, atg_scs::RigidBodySystem *system) {
-    m_objects.push_back(object); 
+    m_objects.push_back(object);
     object->initialize(system);
 }
 
@@ -87,7 +87,9 @@ void Demo::processObjects(float dt) {
 
 void Demo::renderObjects() {
     for (DemoObject *object : m_objects) {
-        object->render(m_app);
+        if (object->isVisible()) {
+            object->render(m_app);
+        }
     }
 }
 
@@ -127,7 +129,7 @@ FixedPositionConstraint *Demo::fixObject(double x, double y) {
     newConstraint->m_link.setBody(m_activeBody);
     newConstraint->m_link.setLocalPosition(l_x, l_y);
     newConstraint->m_link.setWorldPosition(x, y);
-    
+
     return newConstraint;
 }
 
@@ -142,18 +144,18 @@ BarObject *Demo::createLinkedBar(double x, double y, double density) {
 
     BarObject *newBar = createObject<BarObject>(m_targetSystem);
     newBar->m_body.theta = theta;
-    
+
     double ex, ey;
     newBar->m_body.localToWorld(-length / 2, 0, &ex, &ey);
 
     newBar->m_body.p_x = m_cursor_x - ex;
     newBar->m_body.p_y = m_cursor_y - ey;
 
-    newBar->configure(length, density);    
+    newBar->configure(length, density);
 
     if (m_activeBody != nullptr) {
         double x0, y0;
-        m_activeBody->worldToLocal(m_cursor_x, m_cursor_y, &x0, &y0); 
+        m_activeBody->worldToLocal(m_cursor_x, m_cursor_y, &x0, &y0);
 
         LinkConstraint *link = createObject<LinkConstraint>(m_targetSystem);
         link->m_link.setBody2(m_activeBody);
@@ -257,9 +259,8 @@ void Demo::moveBefore(DemoObject *a, DemoObject *b) {
 
     if (i_a <= i_b) return;
 
-    int r = i_b;
     m_objects[i_b] = a;
-    
+
     DemoObject *prev = m_objects[i_b + 1];
     m_objects[i_b + 1] = b;
 

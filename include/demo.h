@@ -1,14 +1,7 @@
 #ifndef ATG_SCS_2D_DEMO_DEMO_H
 #define ATG_SCS_2D_DEMO_DEMO_H
 
-#include "demo_object.h"
-
-#include "bar_object.h"
-#include "disk_object.h"
-#include "spring_object.h"
-#include "fixed_position_constraint.h"
-#include "constant_speed_motor.h"
-#include "empty_object.h"
+#include "demo_objects.h"
 
 #include <string>
 #include <vector>

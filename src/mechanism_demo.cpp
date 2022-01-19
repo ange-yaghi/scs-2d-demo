@@ -121,7 +121,7 @@ void MechanismDemo::initialize() {
 }
 
 void MechanismDemo::process(float dt) {
-    m_rigidBodySystem.process(1 / 60.0, 100);
+    m_rigidBodySystem.process(1 / 60.0, 1);
 
     m_steps = 100;
     m_dt = 1 / 60.0f;

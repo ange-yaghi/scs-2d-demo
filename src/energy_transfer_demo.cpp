@@ -48,7 +48,7 @@ void EnergyTransferDemo::initialize() {
         DiskObject *r0 = createLinkedDisk(1.0, 1.0);
         SpringObject *s0 = connectSpring(&linkBar0->m_body, 0, y);
         s0->m_spring.m_ks = 70;
-        s0->m_spring.m_kd = 3.0;
+        s0->m_spring.m_kd = 0.0; //3
         s0->m_radius = 0.4;
         s0->m_coilCount = 6;
 
@@ -74,7 +74,7 @@ void EnergyTransferDemo::initialize() {
         motor0->m_motor.m_ks = 200;
         motor0->m_motor.m_kd = 1;
         motor0->m_motor.m_maxTorque = 1000;
-        motor0->m_motor.m_speed = (i == 0) ? 3.0 : 10.0;
+        motor0->m_motor.m_speed = (i == 0) ? 3.0 : 20.0;
     }
 }
 

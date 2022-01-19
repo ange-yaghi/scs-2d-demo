@@ -23,16 +23,16 @@ void RollingDemo::initialize() {
         new atg_scs::GaussianEliminationSleSolver, new atg_scs::Rk4OdeSolver);
 
     setCursor(4.0, -1.0);
-    DiskObject *counterweight = createLinkedDisk(0.25, 5.5);
-    BarObject *bar0 = createLinkedBar(4.0, 1.25, 5.0);
+    createLinkedDisk(0.25, 5.5);
+    BarObject *bar0 = createLinkedBar(4.0, 1.25, 1.0);
     FixedPositionConstraint *constraint = fixObject(4.0, 0.0);
     constraint->m_angle = ysMath::Constants::PI;
     constraint->m_link.m_ks = 500;
     constraint->m_link.m_kd = 10;
 
-    BarObject *bar1 = createLinkedBar(0.0, 0.0, 1.0);
-    DiskObject *disk = createLinkedDisk(1.0, 1.0);
-    moveBefore(disk, bar1);
+    BarObject *bar1 = createLinkedBar(0.0, 0.16, 1.0);
+    m_roller = createLinkedDisk(1.0, 1.0);
+    moveBefore(m_roller, bar1);
 
     setActiveBody(nullptr);
     setCursor(-2.0, -1.0);
@@ -41,7 +41,7 @@ void RollingDemo::initialize() {
 
     RollingConstraint *r = createObject<RollingConstraint>(&m_rigidBodySystem);
     r->m_constraint.setBaseBody(&base->m_body);
-    r->m_constraint.setRollingBody(&disk->m_body);
+    r->m_constraint.setRollingBody(&m_roller->m_body);
     r->m_constraint.m_dx = 1.0;
     r->m_constraint.m_dy = 0.0;
     r->m_constraint.m_radius = 1.0;
@@ -49,7 +49,7 @@ void RollingDemo::initialize() {
     r->m_constraint.m_local_y = 0.16;
 
     setCursor(-2.0, -3.0);
-    EmptyObject *empty = createEmpty(EmptyObject::Style::FixedPosition);
+    createEmpty(EmptyObject::Style::FixedPosition);
     SpringObject *spring = connectSpring(&base->m_body, -2.0, -1.0);
     spring->m_spring.m_ks = 50.0f;
     spring->m_spring.m_kd = 1.0f;
@@ -71,6 +71,9 @@ void RollingDemo::initialize() {
 
     moveBefore(motor, constraint);
     moveBefore(base, bar1);
+
+    m_plotter = createObject<Plotter>(nullptr);
+    m_plotter->setSize(1024);
 }
 
 void RollingDemo::process(float dt) {
@@ -83,6 +86,12 @@ void RollingDemo::process(float dt) {
     m_forceEvalMicroseconds = m_rigidBodySystem.getForceEvalMicroseconds();
     m_constraintEvalMicroseconds = m_rigidBodySystem.getConstraintEvalMicroseconds();
     m_constraintSolveMicroseconds = m_rigidBodySystem.getConstraintSolveMicroseconds();
+
+    if (m_app->getEngine()->ProcessKeyDown(ysKey::Code::P)) {
+        m_plotter->setVisible(!m_plotter->isVisible());
+    }
+
+    m_plotter->addPoint({ (float)m_roller->m_body.p_x, (float)m_roller->m_body.p_y });
 }
 
 void RollingDemo::render() {

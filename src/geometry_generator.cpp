@@ -571,10 +571,13 @@ bool GeometryGenerator::generateCircle2d(
 {
     // edge_length = (sin(theta) * radius) * 2
     // theta = arcsin(edge_length / (2 * radius))
+    // theta2 = PI - theta
 
     startSubshape();
 
-    const float angle = std::asinf(params.maxEdgeLength / (2 * params.radius));
+    float angle = std::asinf(params.maxEdgeLength / (2 * params.radius)) * 2;
+    angle = std::fminf(angle, ysMath::Constants::PI - params.smallestAngle);
+
     const float steps = ysMath::Constants::TWO_PI / angle;
 
     int segmentCount = (int)std::ceilf(steps);
@@ -600,17 +603,17 @@ bool GeometryGenerator::generateCircle2d(
 
     for (int i = 0; i < segmentCount; ++i) {
         const float angle0 = angleStep * i;
-        const float x0 = std::cosf(angle0);
-        const float y0 = std::sinf(angle0);
+        const float x = std::cosf(angle0);
+        const float y = std::sinf(angle0);
 
-        const ysVector pos = ysMath::LoadVector(
-                params.center_x + x0 * params.radius,
-                params.center_y + y0 * params.radius, 0.0f, 1.0f);
+        const float pos_x = params.center_x + x * params.radius;
+        const float pos_y = params.center_y + y * params.radius;
 
         dbasic::Vertex *newVertex = writeVertex();
-        newVertex->Normal = ysMath::Constants::ZAxis;
-        newVertex->Pos = pos;
-        newVertex->TexCoord = ysVector2(0.5f * x0 + 0.5f, 0.5f * y0 + 0.5f);
+        newVertex->Normal.Set(0, 0, 1, 0);
+        newVertex->Pos.Set(pos_x, pos_y, 0.0f, 1.0f);
+        newVertex->TexCoord.x = 0.5f * x + 0.5f;
+        newVertex->TexCoord.y = 0.5f * y + 0.5f;
     }
 
     for (int i = 0; i < segmentCount; ++i) {
@@ -734,6 +737,128 @@ bool GeometryGenerator::generateIsoscelesTriangle(
     vertex->TexCoord = ysVector2(1.0f, 0.0f);
 
     writeFace(0, 1, 2);
+
+    return true;
+}
+
+bool GeometryGenerator::startPath(PathParameters &params) {
+    startSubshape();
+
+    const int n = params.n0 + params.n1;
+    if (n < 2) return true;
+
+    ysVector2 *p2 = (1 >= params.n0) ? params.p1 : params.p0;
+    const int i1 = (1 >= params.n0) ? 0 : 1;
+
+    const float dx = p2[i1].x - params.p0[0].x;
+    const float dy = p2[i1].y - params.p0[0].y;
+    const float length = std::sqrt(dx * dx + dy * dy);
+
+    const float dir_x = dx / length;
+    const float dir_y = dy / length;
+
+    const float perp_x = -dir_y;
+    const float perp_y = dir_x;
+
+    if (!checkCapacity(n * 2, (n - 1) * 6)) {
+        return false;
+    }
+
+    dbasic::Vertex *vertex;
+
+    vertex = writeVertex();
+    vertex->Normal = ysMath::Constants::ZAxis;
+    vertex->Pos = ysMath::LoadVector(
+        params.p0[0].x + perp_x * params.width / 2,
+        params.p0[0].y + perp_y * params.width / 2);
+    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+    vertex = writeVertex();
+    vertex->Normal = ysMath::Constants::ZAxis;
+    vertex->Pos = ysMath::LoadVector(
+        params.p0[0].x - perp_x * params.width / 2,
+        params.p0[0].y - perp_y * params.width / 2);
+    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+    params.v0 = 0;
+    params.v1 = 1;
+    params.pdir_x = dir_x;
+    params.pdir_y = dir_y;
+
+    return true;
+}
+
+bool GeometryGenerator::generatePathSegment(PathParameters &params) {
+    const int n = params.n0 + params.n1;
+
+    if (params.i >= n - 1) return true;
+
+    ysVector2 *p0 = (params.i >= params.n0) ? params.p1 : params.p0;
+    const int i0 = (params.i >= params.n0) ? (params.i - params.n0) : params.i;
+    ysVector2 *p1 = (params.i + 1 >= params.n0) ? params.p1 : params.p0;
+    const int i1 = (params.i + 1 >= params.n0) ? (params.i + 1 - params.n0) : params.i + 1;
+
+    const float dx1 = p1[i1].x - p0[i0].x;
+    const float dy1 = p1[i1].y - p0[i0].y;
+    const float length = std::sqrt(dx1 * dx1 + dy1 * dy1);
+
+    const float dir_x = dx1 / length;
+    const float dir_y = dy1 / length;
+
+    float perp_x = -dir_y - params.pdir_y;
+    float perp_y = dir_x + params.pdir_x;
+    float perp_l = std::sqrt(perp_x * perp_x + perp_y * perp_y);
+    if (perp_l == 0) {
+        perp_x = -dir_y;
+        perp_y = dir_x;
+    }
+    else {
+        perp_x /= perp_l;
+        perp_y /= perp_l;
+    }
+
+    dbasic::Vertex *vertex;
+
+    vertex = writeVertex();
+    vertex->Normal = ysMath::Constants::ZAxis;
+    vertex->Pos = ysMath::LoadVector(
+        p0[i0].x + perp_x * params.width / 2,
+        p0[i0].y + perp_y * params.width / 2);
+    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+    vertex = writeVertex();
+    vertex->Normal = ysMath::Constants::ZAxis;
+    vertex->Pos = ysMath::LoadVector(
+        p0[i0].x - perp_x * params.width / 2,
+        p0[i0].y - perp_y * params.width / 2);
+    vertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+    writeFace(params.v0, params.v1, params.v1 + 1);
+    writeFace(params.v1, params.v1 + 2, params.v1 + 1);
+
+    if (params.i + 1 == n - 1) {
+        vertex = writeVertex();
+        vertex->Normal = ysMath::Constants::ZAxis;
+        vertex->Pos = ysMath::LoadVector(
+            p1[i1].x + perp_x * params.width / 2,
+            p1[i1].y + perp_y * params.width / 2);
+        vertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+        vertex = writeVertex();
+        vertex->Normal = ysMath::Constants::ZAxis;
+        vertex->Pos = ysMath::LoadVector(
+            p1[i1].x - perp_x * params.width / 2,
+            p1[i1].y - perp_y * params.width / 2);
+        vertex->TexCoord = ysVector2(0.0f, 0.0f);
+
+        writeFace(params.v0 + 2, params.v1 + 2, params.v1 + 3);
+        writeFace(params.v1 + 2, params.v1 + 4, params.v1 + 3);
+    }
+
+    params.v0 = params.v1 + 1;
+    params.v1 = params.v1 + 2;
+    params.pdir_x = dir_x;
+    params.pdir_y = dir_y;
 
     return true;
 }

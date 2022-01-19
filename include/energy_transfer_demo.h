@@ -9,11 +9,11 @@ class EnergyTransferDemo : public Demo {
     public:
         EnergyTransferDemo();
         virtual ~EnergyTransferDemo();
-    
+
         virtual void initialize();
         virtual void process(float dt);
         virtual void render();
-    
+
     protected:
         atg_scs::RigidBodySystem m_rigidBodySystem;
 };

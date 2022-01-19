@@ -7,7 +7,9 @@
 DoublePendulumDemo::DoublePendulumDemo() {
     setName("Double Pendulum Demo");
 
-    m_steps = 10;
+    m_steps = 100;
+    m_end = nullptr;
+    m_plotter = nullptr;
 }
 
 DoublePendulumDemo::~DoublePendulumDemo() {
@@ -29,11 +31,14 @@ void DoublePendulumDemo::initialize() {
     constraint->m_angle = ysMath::Constants::PI;
 
     BarObject *bar1 = createLinkedBar(4.0, 1.0, 1.0);
-    DiskObject *disk = createLinkedDisk(0.5, 1.0);
-    moveBefore(disk, bar1);
+    m_end = createLinkedDisk(0.5, 1.0);
+    moveBefore(m_end, bar1);
 
     GravityObject *gravity = createObject<GravityObject>(&m_rigidBodySystem);
     gravity->m_gravity.m_g = 10.0;
+
+    m_plotter = createObject<Plotter>(nullptr);
+    m_plotter->setSize(256);
 }
 
 void DoublePendulumDemo::process(float dt) {
@@ -44,6 +49,8 @@ void DoublePendulumDemo::process(float dt) {
     m_forceEvalMicroseconds = m_rigidBodySystem.getForceEvalMicroseconds();
     m_constraintEvalMicroseconds = m_rigidBodySystem.getConstraintEvalMicroseconds();
     m_constraintSolveMicroseconds = m_rigidBodySystem.getConstraintSolveMicroseconds();
+
+    m_plotter->addPoint({ (float)m_end->m_body.p_x, (float)m_end->m_body.p_y });
 }
 
 void DoublePendulumDemo::render() {
