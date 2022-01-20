@@ -8,6 +8,7 @@
 #include "../include/spring_mass_demo.h"
 #include "../include/spring_cloth_demo.h"
 #include "../include/blob_game_demo.h"
+#include "../include/spring_double_pendulum_demo.h"
 
 #include <cmath>
 #include <sstream>
@@ -105,6 +106,7 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
 
     m_activeDemo = 0;
 
+    addDemo(new SpringDoublePendulumDemo);
     addDemo(new BlobGameDemo);
     addDemo(new SpringMassDemo);
     addDemo(new SpringClothDemo);
