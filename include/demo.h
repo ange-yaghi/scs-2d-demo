@@ -68,6 +68,7 @@ class Demo {
         void setActiveBody(atg_scs::RigidBody *body);
         void moveToLocal(double lx, double ly);
         FixedPositionConstraint *fixObject(double x, double y);
+        LinkConstraint *connectObjects(atg_scs::RigidBody *target);
         BarObject *createLinkedBar(double x, double y, double density);
         DiskObject *createLinkedDisk(double r, double density);
         EmptyObject *createEmpty(EmptyObject::Style style);

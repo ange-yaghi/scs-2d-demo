@@ -1,22 +1,22 @@
-#include "../include/double_pendulum_demo.h"
+#include "../include/triple_pendulum_demo.h"
 
 #include "../include/demo_application.h"
 
 #include <sstream>
 
-DoublePendulumDemo::DoublePendulumDemo() {
-    setName("Double Pendulum Demo");
+TriplePendulumDemo::TriplePendulumDemo() {
+    setName("Triple Pendulum Demo");
 
-    m_steps = 100;
+    m_steps = 60;
     m_end = nullptr;
     m_plotter = nullptr;
 }
 
-DoublePendulumDemo::~DoublePendulumDemo() {
+TriplePendulumDemo::~TriplePendulumDemo() {
     /* void */
 }
 
-void DoublePendulumDemo::initialize() {
+void TriplePendulumDemo::initialize() {
     clear();
 
     setTargetSystem(&m_rigidBodySystem);
@@ -26,13 +26,16 @@ void DoublePendulumDemo::initialize() {
 
     setCursor(0.0, 1.0);
 
-    BarObject *bar0 = createLinkedBar(2.0, 1.0, 1.0);
+    BarObject *bar0 = createLinkedBar(4.0 / 3, 1.0, 1.0);
     FixedPositionConstraint *constraint = fixObject(0, 1);
     constraint->m_angle = ysMath::Constants::PI;
 
-    BarObject *bar1 = createLinkedBar(4.0, 1.0, 1.0);
+    for (int i = 2; i <= 3; ++i) {
+        createLinkedBar(i * (4.0 / 3), 1.0, 1.0);
+    }
+
     m_end = createLinkedDisk(0.5, 1.0);
-    moveBefore(m_end, bar1);
+    moveBefore(m_end, bar0);
 
     GravityObject *gravity = createObject<GravityObject>(&m_rigidBodySystem);
     gravity->m_gravity.m_g = 10.0;
@@ -41,7 +44,7 @@ void DoublePendulumDemo::initialize() {
     m_plotter->setSize(1024);
 }
 
-void DoublePendulumDemo::process(float dt) {
+void TriplePendulumDemo::process(float dt) {
     m_rigidBodySystem.process(1 / 60.0, m_steps);
 
     m_dt = 1 / 60.0f;
@@ -53,7 +56,7 @@ void DoublePendulumDemo::process(float dt) {
     m_plotter->addPoint({ (float)m_end->m_body.p_x, (float)m_end->m_body.p_y });
 }
 
-void DoublePendulumDemo::render() {
+void TriplePendulumDemo::render() {
     m_app->drawGrid();
 
     renderObjects();

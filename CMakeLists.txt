@@ -38,6 +38,8 @@ add_executable(scs-2d-demo WIN32
     src/blob_force.cpp
     src/blob_game_demo.cpp
     src/spring_double_pendulum_demo.cpp
+    src/triple_pendulum_demo.cpp
+    src/complex_roller_demo.cpp
 
     # Include files
     include/delta.h
@@ -67,6 +69,8 @@ add_executable(scs-2d-demo WIN32
     include/blob_force.h
     include/blob_game_demo.h
     include/spring_double_pendulum_demo.h
+    include/triple_pendulum_demo.h
+    include/complex_roller_demo.h
 )
 
 target_link_libraries(scs-2d-demo

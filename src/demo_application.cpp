@@ -9,6 +9,8 @@
 #include "../include/spring_cloth_demo.h"
 #include "../include/blob_game_demo.h"
 #include "../include/spring_double_pendulum_demo.h"
+#include "../include/triple_pendulum_demo.h"
+#include "../include/complex_roller_demo.h"
 
 #include <cmath>
 #include <sstream>
@@ -106,6 +108,7 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
 
     m_activeDemo = 0;
 
+    addDemo(new ComplexRollerDemo);
     addDemo(new SpringDoublePendulumDemo);
     addDemo(new BlobGameDemo);
     addDemo(new SpringMassDemo);
@@ -113,6 +116,7 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     addDemo(new EnergyTransferDemo);
     addDemo(new RollingDemo);
     addDemo(new DoublePendulumDemo);
+    addDemo(new TriplePendulumDemo);
     addDemo(new MotorDemo);
     addDemo(new MechanismDemo);
 
@@ -1129,7 +1133,9 @@ void DemoApplication::drawLines(
 
     params.i = 0;
     params.width = pixelsToUnits(0.5f);
-    m_geometryGenerator.startPath(params);
+    if (!m_geometryGenerator.startPath(params)) {
+        return;
+    }
 
     ysVector2 prev = p0[0];
     for (int i = 1; i < n0 + n1; ++i) {

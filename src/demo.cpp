@@ -133,6 +133,20 @@ FixedPositionConstraint *Demo::fixObject(double x, double y) {
     return newConstraint;
 }
 
+LinkConstraint *Demo::connectObjects(atg_scs::RigidBody *target) {
+    double x0, y0, x1, y1;
+    m_activeBody->worldToLocal(m_cursor_x, m_cursor_y, &x0, &y0);
+    target->worldToLocal(m_cursor_x, m_cursor_y, &x1, &y1);
+
+    LinkConstraint *link = createObject<LinkConstraint>(m_targetSystem);
+    link->m_link.setBody2(m_activeBody);
+    link->m_link.setBody1(target);
+    link->m_link.setLocalPosition2(x0, y0);
+    link->m_link.setLocalPosition1(x1, y1);
+
+    return link;
+}
+
 BarObject *Demo::createLinkedBar(double x, double y, double density) {
     const double dx = x - m_cursor_x;
     const double dy = y - m_cursor_y;
