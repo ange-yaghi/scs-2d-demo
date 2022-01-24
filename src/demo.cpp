@@ -1,5 +1,6 @@
 #include "../include/demo.h"
 
+#include "../include/demo_application.h"
 #include "../include/link_constraint.h"
 
 #include "../include/delta.h"
@@ -19,6 +20,7 @@ Demo::Demo() {
     m_cursor_x = m_cursor_y = 0;
     m_activeBody = nullptr;
     m_targetSystem = nullptr;
+    m_mouseObject = nullptr;
 }
 
 Demo::~Demo() {
@@ -27,6 +29,10 @@ Demo::~Demo() {
 
 void Demo::reset() {
     m_objects.clear();
+
+    for (int i = 0; i < 16; ++i) {
+        m_controlSprings[i] = nullptr;
+    }
 
     m_activeBody = nullptr;
 }
@@ -51,6 +57,68 @@ void Demo::process(float dt) {
     processObjects(dt);
 }
 
+void Demo::processInput() {
+    if (m_mouseObject == nullptr) return;
+
+    int x, y;
+    m_app->getEngine()->GetOsMousePos(&x, &y);
+
+    const int w = m_app->getScreenWidth();
+    const int h = m_app->getScreenHeight();
+    const double px = m_app->pixelsToUnits(x - (float)w / 2);
+    const double py = m_app->pixelsToUnits(y - (float)h / 2);
+
+    if (m_app->getEngine()->ProcessMouseButtonDown(ysMouse::Button::Left)) {
+        DemoObject *clickedObject = nullptr;
+        DemoObject::ClickEvent clickEvent{};
+        clickEvent.clicked = false;
+
+        const int n = (int)m_objects.size();
+        for (int i = n - 1; i >= 0; --i) {
+            m_objects[i]->onClick(px, py, &clickEvent);
+
+            if (clickEvent.clicked) {
+                clickedObject = m_objects[i];
+                break;
+            }
+        }
+
+        if (clickEvent.clicked) {
+            for (int i = 0; i < 16; ++i) {
+                if (m_controlSprings[i] == nullptr) continue;
+
+                if (m_controlSprings[i]->getSystem() == clickedObject->getSystem()) {
+                    m_controlSprings[i]->m_spring.m_body1 = &m_mouseObject->m_body;
+                    m_controlSprings[i]->m_spring.m_body2 = clickEvent.body;
+                    m_controlSprings[i]->setVisible(true);
+                    m_controlSprings[i]->m_coilCount = 8;
+                    m_controlSprings[i]->m_spring.m_restLength = 0;
+
+                    double lx, ly;
+                    clickEvent.body->worldToLocal(
+                        clickEvent.x, clickEvent.y, &lx, &ly);
+                    m_controlSprings[i]->m_spring.m_p1_x = 0;
+                    m_controlSprings[i]->m_spring.m_p1_y = 0;
+                    m_controlSprings[i]->m_spring.m_p2_x = lx;
+                    m_controlSprings[i]->m_spring.m_p2_y = ly;
+                }
+            }
+        }
+        else {
+            for (int i = 0; i < 16; ++i) {
+                if (m_controlSprings[i] == nullptr) continue;
+
+                m_controlSprings[i]->setVisible(false);
+                m_controlSprings[i]->m_spring.m_body1 = nullptr;
+                m_controlSprings[i]->m_spring.m_body2 = nullptr;
+            }
+        }
+    }
+
+    m_mouseObject->m_body.p_x = px;
+    m_mouseObject->m_body.p_y = py;
+}
+
 double Demo::energy(atg_scs::RigidBodySystem *system) {
     double energy = 0;
     for (DemoObject *object : m_objects) {
@@ -72,6 +140,10 @@ void Demo::clear() {
     m_activeBody = nullptr;
     m_targetSystem = nullptr;
     m_cursor_x = m_cursor_y = 0;
+
+    for (int i = 0; i < 16; ++i) {
+        m_controlSprings[i] = nullptr;
+    }
 }
 
 void Demo::addObject(DemoObject *object, atg_scs::RigidBodySystem *system) {
@@ -257,6 +329,32 @@ ConstantSpeedMotor *Demo::createMotor(atg_scs::RigidBody *base) {
     newMotor->m_local_y = ly;
 
     return newMotor;
+}
+
+SpringObject *Demo::createControlSpring(double ks, double kd) {
+    SpringObject **target = nullptr;
+    for (int i = 0; i < 16; ++i) {
+        if (m_controlSprings[i] == nullptr) {
+            target = &m_controlSprings[i];
+            break;
+        }
+    }
+
+    if (target == nullptr) return nullptr;
+
+    SpringObject *newSpring = createObject<SpringObject>(m_targetSystem);
+    newSpring->m_spring.m_body1 = nullptr;
+    newSpring->m_spring.m_body2 = nullptr;
+    newSpring->m_spring.m_ks = ks;
+    newSpring->m_spring.m_kd = kd;
+    newSpring->setVisible(false);
+    *target = newSpring;
+
+    return newSpring;
+}
+
+EmptyObject *Demo::createMouseEmpty(EmptyObject::Style style) {
+    return m_mouseObject = createEmpty(EmptyObject::Style::Invisible);
 }
 
 void Demo::moveBefore(DemoObject *a, DemoObject *b) {

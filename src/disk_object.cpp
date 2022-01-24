@@ -42,3 +42,15 @@ void DiskObject::configure(float radius, float density) {
 double DiskObject::energy() const {
     return m_body.energy();
 }
+
+void DiskObject::onClick(double x, double y, ClickEvent *clickEvent) {
+    double lx, ly;
+    m_body.worldToLocal(x, y, &lx, &ly);
+
+    clickEvent->clicked = false;
+    if (lx * lx + ly * ly > m_radius * m_radius) return;
+    
+    clickEvent->body = &m_body;
+    clickEvent->clicked = true;
+    m_body.localToWorld(lx, ly, &clickEvent->x, &clickEvent->y);
+}

@@ -7,6 +7,13 @@ class DemoApplication;
 
 class DemoObject {
     public:
+        struct ClickEvent {
+            atg_scs::RigidBody *body;
+            double x, y;
+            bool clicked;
+        };
+
+    public:
         DemoObject();
         virtual ~DemoObject();
 
@@ -15,6 +22,7 @@ class DemoObject {
         virtual void render(DemoApplication *app);
         virtual void process(float dt, DemoApplication *app);
         virtual double energy() const;
+        virtual void onClick(double x, double y, ClickEvent *clickEvent);
         atg_scs::RigidBodySystem *getSystem() { return m_system; }
 
         void setVisible(bool visible) { m_visible = visible; }

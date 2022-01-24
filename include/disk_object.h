@@ -13,6 +13,7 @@ class DiskObject : public DemoObject {
         virtual void render(DemoApplication *app);
         virtual void process(float dt, DemoApplication *app);
         virtual double energy() const;
+        virtual void onClick(double x, double y, ClickEvent *clickEvent);
 
         void configure(float radius, float density);
 

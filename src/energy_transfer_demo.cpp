@@ -76,6 +76,9 @@ void EnergyTransferDemo::initialize() {
         motor0->m_motor.m_maxTorque = 1000;
         motor0->m_motor.m_speed = (i == 0) ? 3.0 : 20.0;
     }
+
+    createControlSpring(5.0, 1.0);
+    createMouseEmpty(EmptyObject::Style::Invisible);
 }
 
 void EnergyTransferDemo::process(float dt) {

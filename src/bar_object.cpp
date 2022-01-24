@@ -2,6 +2,8 @@
 
 #include "../include/demo_application.h"
 
+#include <algorithm>
+
 BarObject::BarObject() {
     /* void */
 }
@@ -45,4 +47,18 @@ void BarObject::configure(float length, float density) {
 
 double BarObject::energy() const {
     return m_body.energy();
+}
+
+void BarObject::onClick(double x, double y, ClickEvent *clickEvent) {
+    double lx, ly;
+    m_body.worldToLocal(x, y, &lx, &ly);
+
+    clickEvent->clicked = false;
+    if (lx >= -m_length / 2 && lx <= m_length / 2) {
+        if (std::abs(ly) <= 0.2) {
+            clickEvent->body = &m_body;
+            clickEvent->clicked = true;
+            m_body.localToWorld(lx, 0, &clickEvent->x, &clickEvent->y);
+        }
+    }
 }

@@ -32,7 +32,7 @@ void SpringClothDemo::initialize() {
             setActiveBody(nullptr);
             if (j != ClothNodes - 1) {
                 setCursor(i * UnitWidth - ClothWidth / 2 + 0.1 * j, j * UnitWidth - ClothWidth / 2);
-                nodes[i * ClothNodes + j] = &createLinkedDisk(0.1, 1.0)->m_body;
+                nodes[i * ClothNodes + j] = &createLinkedDisk(0.5, 0.1)->m_body;
             }
             else {
                 setCursor(i * UnitWidth - ClothWidth / 2, j * UnitWidth - ClothWidth / 2);
@@ -67,6 +67,9 @@ void SpringClothDemo::initialize() {
 
     GravityObject *g = createObject<GravityObject>(&m_rigidBodySystem);
     g->m_gravity.m_g = 10;
+
+    createControlSpring(5.0, 1.0);
+    createMouseEmpty(EmptyObject::Style::Invisible);
 }
 
 void SpringClothDemo::process(float dt) {

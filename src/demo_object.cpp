@@ -28,3 +28,7 @@ void DemoObject::process(float dt, DemoApplication *app) {
 double DemoObject::energy() const {
     return 0;
 }
+
+void DemoObject::onClick(double x, double y, ClickEvent *clickEvent) {
+    /* void */
+}

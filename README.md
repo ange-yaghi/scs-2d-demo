@@ -1,13 +1,15 @@
-# Delta Template Project
+# Simple Constraint Solver Demo
 
-This is a basic template project used to create an application that uses the [Delta Studio](https://github.com/ange-yaghi/delta-studio) game engine.
+This is a simple demo project for the [Simple 2D Constraint Solver System](https://github.com/ange-yaghi/simple-2d-constraint-solver).
+
+![Alt text](docs/public/screenshots/screenshot_2022_01_32.png?raw=true)
 
 ## Steps to Clone and Build
 
 **Note: this project currently only builds on Windows!**
 
 ### Step 1 - Clone the repository
-```git clone --recurse-submodules https://github.com/ange-yaghi/delta-template```
+```git clone --recurse-submodules https://github.com/ange-yaghi/scs-2d-demo```
 
 ### Step 2 - Install CMake
 Install the latest version of CMake [here](https://cmake.org/) if it's not already installed.
@@ -29,4 +31,4 @@ cmake ..
 cmake --build .
 ```
 
-If these steps are successful, a Visual Studio solution will be generated in ```build/Debug```. You can open this project with Visual Studio and then run the ```delta-template``` project. If you encounter an error telling you that you're missing DLLs, you will have to copy those DLLs to your EXE's directory.
+If these steps are successful, a Visual Studio solution will be generated in ```build```. You can open this project with Visual Studio and then run the ```scs-2d-demo``` project. If you encounter an error telling you that you're missing DLLs, you will have to copy those DLLs to your EXE's directory.

@@ -2,7 +2,6 @@
 
 #include "../include/double_pendulum_demo.h"
 #include "../include/motor_demo.h"
-#include "../include/mechanism_demo.h"
 #include "../include/rolling_demo.h"
 #include "../include/energy_transfer_demo.h"
 #include "../include/spring_mass_demo.h"
@@ -118,7 +117,6 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     addDemo(new DoublePendulumDemo);
     addDemo(new TriplePendulumDemo);
     addDemo(new MotorDemo);
-    addDemo(new MechanismDemo);
 
     m_textRenderer.SetEngine(&m_engine);
     m_textRenderer.SetRenderer(m_engine.GetUiRenderer());
@@ -126,8 +124,9 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
 }
 
 void DemoApplication::run() {
-    while (m_engine.IsOpen()) {
+    while (true) {
         m_engine.StartFrame();
+        if (!m_engine.IsOpen()) return;
 
         m_displayHeight = (10.0f / 1080) * getScreenHeight();
 
@@ -139,6 +138,8 @@ void DemoApplication::run() {
             m_demos[m_activeDemo]->reset();
             m_demos[m_activeDemo]->initialize();
         }
+
+        m_demos[m_activeDemo]->processInput();
 
         if (!m_paused || m_engine.ProcessKeyDown(ysKey::Code::Right)) {
             m_demos[m_activeDemo]->process(m_engine.GetFrameLength());

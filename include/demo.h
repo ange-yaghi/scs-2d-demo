@@ -20,6 +20,7 @@ class Demo {
         virtual void initialize();
         virtual void render();
         virtual void process(float dt);
+        void processInput();
         double energy(atg_scs::RigidBodySystem *system = nullptr);
 
         std::string getName() const { return m_name; }
@@ -57,6 +58,9 @@ class Demo {
         float m_constraintEvalMicroseconds;
         float m_constraintSolveMicroseconds;
 
+        EmptyObject *m_mouseObject;
+        SpringObject *m_controlSprings[16];
+
     protected:
         double m_cursor_x;
         double m_cursor_y;
@@ -74,6 +78,8 @@ class Demo {
         EmptyObject *createEmpty(EmptyObject::Style style);
         SpringObject *connectSpring(atg_scs::RigidBody *target, double x, double y);
         ConstantSpeedMotor *createMotor(atg_scs::RigidBody *base);
+        SpringObject *createControlSpring(double ks, double kd);
+        EmptyObject *createMouseEmpty(EmptyObject::Style style);
         void moveBefore(DemoObject *a, DemoObject *b);
 
         atg_scs::RigidBodySystem *m_targetSystem;
