@@ -75,8 +75,8 @@ void RollingDemo::initialize() {
     m_plotter = createObject<Plotter>(nullptr);
     m_plotter->setSize(1024);
 
+    createMouseEmpty(EmptyObject::Style::Cursor);
     createControlSpring(200, 1.0);
-    createMouseEmpty(EmptyObject::Style::Invisible);
 }
 
 void RollingDemo::process(float dt) {

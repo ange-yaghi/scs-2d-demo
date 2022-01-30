@@ -7,6 +7,7 @@ class EmptyObject : public DemoObject {
     public:
         enum class Style {
             FixedPosition,
+            Cursor,
             Invisible
         };
 

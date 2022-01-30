@@ -68,8 +68,8 @@ void SpringClothDemo::initialize() {
     GravityObject *g = createObject<GravityObject>(&m_rigidBodySystem);
     g->m_gravity.m_g = 10;
 
+    createMouseEmpty(EmptyObject::Style::Cursor);
     createControlSpring(5.0, 1.0);
-    createMouseEmpty(EmptyObject::Style::Invisible);
 }
 
 void SpringClothDemo::process(float dt) {

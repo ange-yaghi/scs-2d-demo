@@ -39,6 +39,7 @@ public:
             float cornerRadius);
     void drawGrid();
     void drawFixedPositionConstraint(float x, float y, float angle);
+    void drawCursor(float x, float y);
     void drawSpring(
             float x0,
             float y0,

@@ -93,8 +93,8 @@ void ComplexRollerDemo::initialize() {
     GravityObject *gravity = createObject<GravityObject>(&m_rigidBodySystem);
     gravity->m_gravity.m_g = 10.0;
 
+    createMouseEmpty(EmptyObject::Style::Cursor);
     createControlSpring(200.0, 1.0);
-    createMouseEmpty(EmptyObject::Style::Invisible);
 }
 
 void ComplexRollerDemo::process(float dt) {

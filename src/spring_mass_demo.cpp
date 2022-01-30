@@ -36,6 +36,9 @@ void SpringMassDemo::initialize() {
 
     GravityObject *g = createObject<GravityObject>(&m_rigidBodySystem);
     g->m_gravity.m_g = 10;
+
+    createMouseEmpty(EmptyObject::Style::Cursor);
+    createControlSpring(100.0, 10.0);
 }
 
 void SpringMassDemo::process(float dt) {

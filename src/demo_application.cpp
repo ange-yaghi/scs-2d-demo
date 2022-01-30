@@ -10,6 +10,7 @@
 #include "../include/spring_double_pendulum_demo.h"
 #include "../include/triple_pendulum_demo.h"
 #include "../include/complex_roller_demo.h"
+#include "../include/dtv.h"
 
 #include <cmath>
 #include <sstream>
@@ -121,12 +122,43 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     m_textRenderer.SetEngine(&m_engine);
     m_textRenderer.SetRenderer(m_engine.GetUiRenderer());
     m_textRenderer.SetFont(m_engine.GetConsole()->GetFont());
+
+    m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
 }
 
 void DemoApplication::run() {
+#ifdef ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE
+    atg_dtv::Encoder encoder;
+    atg_dtv::Encoder::VideoSettings settings{};
+
+    // Output filename
+    settings.fname = "scs_demo_video_capture.mp4";
+
+    // Input dimensions
+    settings.inputWidth = 2560;
+    settings.inputHeight = 1440;
+
+    // Output dimensions
+    settings.width = 2560;
+    settings.height = 1440;
+
+    // Encoder settings
+    settings.hardwareEncoding = true;
+    settings.inputAlpha = true;
+    settings.bitRate = 16000000;
+
+    encoder.run(settings, 2);
+
+    uint8_t *target = new uint8_t[2560 * 1440 * 4];
+#endif /* ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE */
+
     while (true) {
+        if (m_engine.ProcessKeyDown(ysKey::Code::Escape)) {
+            break;
+        }
+
         m_engine.StartFrame();
-        if (!m_engine.IsOpen()) return;
+        if (!m_engine.IsOpen()) break;
 
         m_displayHeight = (10.0f / 1080) * getScreenHeight();
 
@@ -149,6 +181,35 @@ void DemoApplication::run() {
 
         m_engine.EndFrame();
 
+        // Screen Capture
+#ifdef ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE
+        atg_dtv::Frame *frame = encoder.newFrame(true);
+        if (frame != nullptr && encoder.getError() == atg_dtv::Encoder::Error::None) {
+            m_engine.GetDevice()->ReadRenderTarget(m_engine.GetScreenRenderTarget(), target);
+
+            /*
+            const int destLineWidth = settings.inputWidth * 3;
+            const int srcLineWidth = settings.inputWidth * 4;
+            for (int y = 0; y < settings.inputHeight; ++y) {
+                uint8_t *row = &frame->m_rgb[y * destLineWidth];
+                for (int x = 0; x < settings.inputWidth; ++x) {
+                    const int srcIndex = x * 4;
+                    const int destIndex = x * 3;
+                    row[destIndex + 0] = target[y * srcLineWidth + srcIndex + 0];
+                    row[destIndex + 1] = target[y * srcLineWidth + srcIndex + 1];
+                    row[destIndex + 2] = target[y * srcLineWidth + srcIndex + 2];
+                }
+            }*/
+            memcpy(
+                frame->m_rgb,
+                target,
+                sizeof(uint8_t) * settings.inputWidth * settings.inputHeight * 4
+            );
+        }
+
+        encoder.submitFrame();
+#endif /* ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE */
+
         if (m_engine.ProcessKeyDown(ysKey::Code::Tab)) {
             m_activeDemo = (m_activeDemo + 1) % (int)m_demos.size();
         }
@@ -157,6 +218,11 @@ void DemoApplication::run() {
             m_showingStats = !m_showingStats;
         }
     }
+
+#ifdef ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE
+    encoder.commit();
+    encoder.stop();
+#endif /* ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE */
 }
 
 void DemoApplication::destroy() {
@@ -517,6 +583,59 @@ void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle)
 
     m_shaders.SetBaseColor(m_shadow);
     drawGenerated(pin, ForegroundLayer);
+}
+
+void DemoApplication::drawCursor(float x, float y) {
+    GeometryGenerator::GeometryIndices main, shadow;
+
+    const float radius = pixelsToUnits(20) * m_uiScale;
+    const float overallRadius = radius;
+    const float shadowThickness = pixelsToUnits(6) * m_uiScale;
+    const float maxEdgeLength = pixelsToUnits(10.0f);
+
+    GeometryGenerator::Circle2dParameters params;
+    params.maxEdgeLength = maxEdgeLength;
+
+    // Overall
+    m_geometryGenerator.startShape();
+
+    params.center_x = params.center_y = 0;
+    params.radius = overallRadius;
+    m_geometryGenerator.generateCircle2d(params);
+
+    m_geometryGenerator.endShape(&main);
+
+    // Shadows
+    m_geometryGenerator.startShape();
+
+    params.center_x = params.center_y = 0;
+    params.radius = overallRadius + shadowThickness;
+    m_geometryGenerator.generateCircle2d(params);
+
+    m_geometryGenerator.endShape(&shadow);
+
+    // Draw geometry
+    ysMatrix mat =
+        ysMath::TranslationTransform(
+            ysMath::LoadVector(
+                (float)x,
+                (float)y,
+                0.0f,
+                0.0f));
+
+    m_shaders.ResetBrdfParameters();
+    m_shaders.SetBaseColor(ysMath::LoadVector(1.0f, 1.0f, 1.0f, 1.0f));
+    m_shaders.SetColorReplace(true);
+    m_shaders.SetLit(false);
+    m_shaders.SetFogFar(2001);
+    m_shaders.SetFogNear(2000.0);
+    m_shaders.SetObjectTransform(mat);
+
+    m_shaders.SetBaseColor(m_shadow);
+    drawGenerated(shadow);
+
+    m_shaders.SetBaseColor(m_highlight1);
+    drawGenerated(main);
 }
 
 void DemoApplication::drawSpring(

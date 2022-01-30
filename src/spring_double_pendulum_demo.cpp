@@ -50,6 +50,9 @@ void SpringDoublePendulumDemo::initialize() {
 
     m_plotter = createObject<Plotter>(nullptr);
     m_plotter->setSize(256);
+
+    createMouseEmpty(EmptyObject::Style::Cursor);
+    createControlSpring(1000.0, 100.0);
 }
 
 void SpringDoublePendulumDemo::process(float dt) {

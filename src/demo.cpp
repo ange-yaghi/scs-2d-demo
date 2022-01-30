@@ -354,7 +354,7 @@ SpringObject *Demo::createControlSpring(double ks, double kd) {
 }
 
 EmptyObject *Demo::createMouseEmpty(EmptyObject::Style style) {
-    return m_mouseObject = createEmpty(EmptyObject::Style::Invisible);
+    return m_mouseObject = createEmpty(style);
 }
 
 void Demo::moveBefore(DemoObject *a, DemoObject *b) {

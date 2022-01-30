@@ -29,6 +29,11 @@ void EmptyObject::render(DemoApplication *app) {
                 m_body.p_y,
                 m_body.theta);
     }
+    else if (m_style == Style::Cursor) {
+        app->drawCursor(
+            m_body.p_x,
+            m_body.p_y);
+    }
 }
 
 void EmptyObject::process(float dt, DemoApplication *app) {

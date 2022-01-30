@@ -43,8 +43,8 @@ void TriplePendulumDemo::initialize() {
     m_plotter = createObject<Plotter>(nullptr);
     m_plotter->setSize(1024);
 
+    createMouseEmpty(EmptyObject::Style::Cursor);
     createControlSpring(1000.0, 100.0);
-    createMouseEmpty(EmptyObject::Style::Invisible);
 }
 
 void TriplePendulumDemo::process(float dt) {

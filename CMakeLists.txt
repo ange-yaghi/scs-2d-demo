@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 
+option(DTV "Enable video output" OFF)
+
+if (DTV)
+    add_compile_definitions(ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE)
+ENDIF (DTV)
+
 # Enable group projects in folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake")
@@ -69,11 +75,17 @@ add_executable(scs-2d-demo WIN32
     include/spring_double_pendulum_demo.h
     include/triple_pendulum_demo.h
     include/complex_roller_demo.h
+    include/dtv.h
 )
 
 target_link_libraries(scs-2d-demo
     simple-2d-constraint-solver
     delta-basic)
+
+if (DTV)
+    target_link_libraries(scs-2d-demo
+        direct-to-video)
+endif (DTV)
 
 target_include_directories(scs-2d-demo
     PUBLIC dependencies/submodules)
