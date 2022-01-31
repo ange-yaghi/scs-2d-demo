@@ -67,7 +67,7 @@ void MotorDemo::initialize() {
 void MotorDemo::process(float dt) {
     Demo::process(dt);
 
-    m_rigidBodySystem.process(1 / 60.0, 1);
+    m_rigidBodySystem.process((double)dt, 1);
 
     if (m_app->getEngine()->IsKeyDown(ysKey::Code::A)) {
         m_motor.m_motor.m_speed = 4.0;
@@ -77,7 +77,7 @@ void MotorDemo::process(float dt) {
     }
 
     m_steps = 1;
-    m_dt = 1 / 60.0f;
+    m_dt = dt;
     m_odeSolveMicroseconds = m_rigidBodySystem.getOdeSolveMicroseconds();
     m_forceEvalMicroseconds = m_rigidBodySystem.getForceEvalMicroseconds();
     m_constraintEvalMicroseconds = m_rigidBodySystem.getConstraintEvalMicroseconds();

@@ -82,9 +82,9 @@ void RollingDemo::initialize() {
 void RollingDemo::process(float dt) {
     Demo::process(dt);
 
-    m_rigidBodySystem.process(1 / 60.0, m_steps);
+    m_rigidBodySystem.process((double)dt, m_steps);
 
-    m_dt = 1 / 60.0f;
+    m_dt = dt;
     m_odeSolveMicroseconds = m_rigidBodySystem.getOdeSolveMicroseconds();
     m_forceEvalMicroseconds = m_rigidBodySystem.getForceEvalMicroseconds();
     m_constraintEvalMicroseconds = m_rigidBodySystem.getConstraintEvalMicroseconds();

@@ -45,7 +45,7 @@ void DoublePendulumDemo::initialize() {
 }
 
 void DoublePendulumDemo::process(float dt) {
-    m_rigidBodySystem.process(dt, m_steps);
+    m_rigidBodySystem.process((double)dt, m_steps);
 
     m_dt = dt;
     m_odeSolveMicroseconds = m_rigidBodySystem.getOdeSolveMicroseconds();

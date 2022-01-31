@@ -7,6 +7,7 @@
 #include "bar_object.h"
 
 #include "delta.h"
+#include "dtv.h"
 
 class DemoApplication {
 public:
@@ -116,6 +117,23 @@ protected:
     dbasic::ModelAsset *m_blobFace;
 
     dbasic::TextRenderer m_textRenderer;
+
+protected:
+    void startRecording();
+    void updateScreenSizeStability();
+    bool readyToRecord();
+    void stopRecording();
+    void recordFrame();
+    bool isRecording() const { return m_recording;  }
+
+    static constexpr int ScreenResolutionHistoryLength = 5;
+    int m_screenResolution[ScreenResolutionHistoryLength][2];
+    int m_screenResolutionIndex;
+    bool m_recording;
+
+#ifdef ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE
+    atg_dtv::Encoder m_encoder;
+#endif /* ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE */
 };
 
 #endif /* ATG_SCS_2D_DEMO_DEMO_APPLICATION_H */

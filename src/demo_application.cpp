@@ -10,7 +10,6 @@
 #include "../include/spring_double_pendulum_demo.h"
 #include "../include/triple_pendulum_demo.h"
 #include "../include/complex_roller_demo.h"
-#include "../include/dtv.h"
 
 #include <cmath>
 #include <sstream>
@@ -33,7 +32,7 @@ DemoApplication::DemoApplication() {
 
     m_background = ysColor::srgbiToLinear(0xFFFFFF);
     m_foreground = ysColor::srgbiToLinear(0xFFFFFF);
-    m_shadow = ysColor::srgbiToLinear(0x101213);
+    m_shadow = ysColor::srgbiToLinear(0x0E1012);
     m_highlight1 = ysColor::srgbiToLinear(0xEF4545);
     m_highlight2 = ysColor::srgbiToLinear(0xFFFFFF);
 
@@ -42,6 +41,12 @@ DemoApplication::DemoApplication() {
     m_blobFace = nullptr;
 
     m_uiScale = 1.0f;
+
+    m_recording = false;
+    m_screenResolutionIndex = 0;
+    for (int i = 0; i < ScreenResolutionHistoryLength; ++i) {
+        m_screenResolution[i][0] = m_screenResolution[i][1] = 0;
+    }
 }
 
 DemoApplication::~DemoApplication() {
@@ -122,36 +127,9 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     m_textRenderer.SetEngine(&m_engine);
     m_textRenderer.SetRenderer(m_engine.GetUiRenderer());
     m_textRenderer.SetFont(m_engine.GetConsole()->GetFont());
-
-    m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
 }
 
 void DemoApplication::run() {
-#ifdef ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE
-    atg_dtv::Encoder encoder;
-    atg_dtv::Encoder::VideoSettings settings{};
-
-    // Output filename
-    settings.fname = "scs_demo_video_capture.mp4";
-
-    // Input dimensions
-    settings.inputWidth = 2560;
-    settings.inputHeight = 1440;
-
-    // Output dimensions
-    settings.width = 2560;
-    settings.height = 1440;
-
-    // Encoder settings
-    settings.hardwareEncoding = true;
-    settings.inputAlpha = true;
-    settings.bitRate = 16000000;
-
-    encoder.run(settings, 2);
-
-    uint8_t *target = new uint8_t[2560 * 1440 * 4];
-#endif /* ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE */
-
     while (true) {
         if (m_engine.ProcessKeyDown(ysKey::Code::Escape)) {
             break;
@@ -160,10 +138,19 @@ void DemoApplication::run() {
         m_engine.StartFrame();
         if (!m_engine.IsOpen()) break;
 
-        m_displayHeight = (10.0f / 1080) * getScreenHeight();
+        m_displayHeight = 15.0f;
+        m_uiScale = (10.0f / (m_displayHeight + 1.0f));
 
-        if (m_engine.ProcessKeyDown(ysKey::Code::Space)) {
+        updateScreenSizeStability();
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::Space) &&
+            m_engine.GetGameWindow()->IsActive())
+        {
             m_paused = !m_paused;
+        }
+
+        if (m_engine.ProcessKeyDown(ysKey::Code::F)) {
+            m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
         }
 
         if (m_engine.ProcessKeyDown(ysKey::Code::R)) {
@@ -171,44 +158,34 @@ void DemoApplication::run() {
             m_demos[m_activeDemo]->initialize();
         }
 
+        if (m_engine.ProcessKeyDown(ysKey::Code::V) &&
+            m_engine.GetGameWindow()->IsActive())
+        {
+            if (!isRecording() && readyToRecord()) {
+                startRecording();
+            }
+            else if (isRecording()) {
+                stopRecording();
+            }
+        }
+
+        if (isRecording() && !readyToRecord()) {
+            stopRecording();
+        }
+
         m_demos[m_activeDemo]->processInput();
 
         if (!m_paused || m_engine.ProcessKeyDown(ysKey::Code::Right)) {
-            m_demos[m_activeDemo]->process(m_engine.GetFrameLength());
+            m_demos[m_activeDemo]->process(1 / 60.0f);
         }
 
         renderScene();
 
         m_engine.EndFrame();
 
-        // Screen Capture
-#ifdef ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE
-        atg_dtv::Frame *frame = encoder.newFrame(true);
-        if (frame != nullptr && encoder.getError() == atg_dtv::Encoder::Error::None) {
-            m_engine.GetDevice()->ReadRenderTarget(m_engine.GetScreenRenderTarget(), target);
-
-            /*
-            const int destLineWidth = settings.inputWidth * 3;
-            const int srcLineWidth = settings.inputWidth * 4;
-            for (int y = 0; y < settings.inputHeight; ++y) {
-                uint8_t *row = &frame->m_rgb[y * destLineWidth];
-                for (int x = 0; x < settings.inputWidth; ++x) {
-                    const int srcIndex = x * 4;
-                    const int destIndex = x * 3;
-                    row[destIndex + 0] = target[y * srcLineWidth + srcIndex + 0];
-                    row[destIndex + 1] = target[y * srcLineWidth + srcIndex + 1];
-                    row[destIndex + 2] = target[y * srcLineWidth + srcIndex + 2];
-                }
-            }*/
-            memcpy(
-                frame->m_rgb,
-                target,
-                sizeof(uint8_t) * settings.inputWidth * settings.inputHeight * 4
-            );
+        if (isRecording()) {
+            recordFrame();
         }
-
-        encoder.submitFrame();
-#endif /* ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE */
 
         if (m_engine.ProcessKeyDown(ysKey::Code::Tab)) {
             m_activeDemo = (m_activeDemo + 1) % (int)m_demos.size();
@@ -219,10 +196,9 @@ void DemoApplication::run() {
         }
     }
 
-#ifdef ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE
-    encoder.commit();
-    encoder.stop();
-#endif /* ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE */
+    if (isRecording()) {
+        stopRecording();
+    }
 }
 
 void DemoApplication::destroy() {
@@ -307,7 +283,7 @@ void DemoApplication::drawBar(
     // Bolts
     m_geometryGenerator.startShape();
 
-    circleParams.radius = pixelsToUnits(5);
+    circleParams.radius = pixelsToUnits(5) * m_uiScale;
     circleParams.center_x = -length / 2;
     m_geometryGenerator.generateCircle2d(circleParams);
 
@@ -902,7 +878,7 @@ void DemoApplication::drawDisk(float x, float y, float theta, float radius) {
     GeometryGenerator::GeometryIndices main, shadow, details;
 
     const float minRadius = pixelsToUnits(40) * m_uiScale;
-    const float overallRadius = std::fmaxf(minRadius, radius * m_uiScale);
+    const float overallRadius = std::fmaxf(minRadius, radius);
     const float centerRadius = pixelsToUnits(20) * m_uiScale;
     const float boltRadius = pixelsToUnits(5) * m_uiScale;
     const float shadowThickness = pixelsToUnits(6) * m_uiScale;
@@ -1197,7 +1173,7 @@ void DemoApplication::renderTitle() {
     const long freq =
         std::lroundf(m_demos[m_activeDemo]->getSteps() / m_demos[m_activeDemo]->getTimestep());
 
-    ss << "FR = " << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";
+    ss << "RT FR = " << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";
     ss << "SR = " << freq << " HZ      \n";
     ss << "STEPS = " << m_demos[m_activeDemo]->getSteps() << "     \n";
     ss << "ENERGY = " << m_demos[m_activeDemo]->energy() << "      \n";
@@ -1368,6 +1344,71 @@ void DemoApplication::renderScene() {
         (char *)m_geometryGenerator.getIndexData(),
         sizeof(unsigned short) * m_geometryGenerator.getCurrentIndexCount(),
         0);
+}
+
+void DemoApplication::startRecording() {
+    m_recording = true;
+
+#ifdef ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE
+    atg_dtv::Encoder::VideoSettings settings{};
+
+    // Output filename
+    settings.fname = "scs_demo_video_capture.mp4";
+    settings.inputWidth = m_engine.GetScreenWidth();
+    settings.inputHeight = m_engine.GetScreenHeight();
+    settings.width = settings.inputWidth;
+    settings.height = settings.inputHeight;
+    settings.hardwareEncoding = true;
+    settings.inputAlpha = true;
+    settings.bitRate = 40000000;
+
+    m_encoder.run(settings, 2);
+#endif /* ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE */
+}
+
+void DemoApplication::updateScreenSizeStability() {
+    m_screenResolution[m_screenResolutionIndex][0] = m_engine.GetScreenWidth();
+    m_screenResolution[m_screenResolutionIndex][1] = m_engine.GetScreenHeight();
+
+    m_screenResolutionIndex = (m_screenResolutionIndex + 1) % ScreenResolutionHistoryLength;
+}
+
+bool DemoApplication::readyToRecord() {
+    const int w = m_screenResolution[0][0];
+    const int h = m_screenResolution[0][1];
+
+    if (w <= 0 && h <= 0) return false;
+    if ((w % 2) != 0 || (h % 2) != 0) return false;
+
+    for (int i = 1; i < ScreenResolutionHistoryLength; ++i) {
+        if (m_screenResolution[i][0] != w) return false;
+        if (m_screenResolution[i][1] != h) return false;
+    }
+
+    return true;
+}
+
+void DemoApplication::stopRecording() {
+    m_recording = false;
+
+#ifdef ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE
+    m_encoder.commit();
+    m_encoder.stop();
+#endif /* ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE */
+}
+
+void DemoApplication::recordFrame() {
+#ifdef ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE
+    const int width = m_engine.GetScreenWidth();
+    const int height = m_engine.GetScreenHeight();
+
+    atg_dtv::Frame *frame = m_encoder.newFrame(true);
+    if (frame != nullptr && m_encoder.getError() == atg_dtv::Encoder::Error::None) {
+        m_engine.GetDevice()->ReadRenderTarget(m_engine.GetScreenRenderTarget(), frame->m_rgb);
+    }
+
+    m_encoder.submitFrame();
+#endif /* ATG_SCS_DEMO_ENABLE_VIDEO_CAPTURE */
 }
 
 void DemoApplication::addDemo(Demo *demo) {
