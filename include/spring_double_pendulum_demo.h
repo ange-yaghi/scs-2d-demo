@@ -22,7 +22,7 @@ class SpringDoublePendulumDemo : public Demo {
         virtual void render();
 
     protected:
-        atg_scs::RigidBodySystem m_rigidBodySystem;
+        atg_scs::GenericRigidBodySystem m_rigidBodySystem;
 
         DiskObject *m_end;
         Plotter *m_plotter;

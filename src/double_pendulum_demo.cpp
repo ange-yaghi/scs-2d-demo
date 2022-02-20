@@ -10,6 +10,7 @@ DoublePendulumDemo::DoublePendulumDemo() {
     m_steps = 100;
     m_end = nullptr;
     m_plotter = nullptr;
+    m_motorOn = true;
 }
 
 DoublePendulumDemo::~DoublePendulumDemo() {
@@ -22,7 +23,7 @@ void DoublePendulumDemo::initialize() {
     setTargetSystem(&m_rigidBodySystem);
     m_rigidBodySystem.reset();
     m_rigidBodySystem.initialize(
-        new atg_scs::GaussianEliminationSleSolver, new atg_scs::Rk4OdeSolver);
+        new atg_scs::GaussianEliminationSleSolver);
 
     setCursor(0.0, 1.0);
 
@@ -33,6 +34,10 @@ void DoublePendulumDemo::initialize() {
     BarObject *bar1 = createLinkedBar(4.0, 1.0, 1.0);
     m_end = createLinkedDisk(0.5, 1.0);
     moveBefore(m_end, bar1);
+
+    m_motor = createObject<ConstantRotationConstraint>(m_targetSystem);
+    m_motor->m_constraint.setBody(&bar0->m_body);
+    m_motor->m_constraint.m_rotationSpeed = 1.0;
 
     GravityObject *gravity = createObject<GravityObject>(&m_rigidBodySystem);
     gravity->m_gravity.m_g = 10.0;
@@ -46,6 +51,17 @@ void DoublePendulumDemo::initialize() {
 
 void DoublePendulumDemo::process(float dt) {
     m_rigidBodySystem.process((double)dt, m_steps);
+
+    if (m_app->getEngine()->ProcessKeyDown(ysKey::Code::M)) {
+        if (m_motorOn) {
+            m_rigidBodySystem.removeConstraint(&m_motor->m_constraint);
+        }
+        else {
+            m_rigidBodySystem.addConstraint(&m_motor->m_constraint);
+        }
+
+        m_motorOn = !m_motorOn;
+    }
 
     m_dt = dt;
     m_odeSolveMicroseconds = m_rigidBodySystem.getOdeSolveMicroseconds();

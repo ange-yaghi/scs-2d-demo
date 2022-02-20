@@ -111,9 +111,8 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     m_blobBackground = m_assetManager.GetModelAsset("Blob_shadow");
     m_blobFace = m_assetManager.GetModelAsset("Blob_face");
 
-    m_activeDemo = 0;
+    m_activeDemo = 6;
 
-    addDemo(new ComplexRollerDemo);
     addDemo(new SpringDoublePendulumDemo);
     addDemo(new BlobGameDemo);
     addDemo(new SpringMassDemo);
@@ -122,6 +121,7 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     addDemo(new RollingDemo);
     addDemo(new DoublePendulumDemo);
     addDemo(new TriplePendulumDemo);
+    addDemo(new ComplexRollerDemo);
     addDemo(new MotorDemo);
 
     m_textRenderer.SetEngine(&m_engine);

@@ -45,6 +45,7 @@ add_executable(scs-2d-demo WIN32
     src/spring_double_pendulum_demo.cpp
     src/triple_pendulum_demo.cpp
     src/complex_roller_demo.cpp
+    src/constant_rotation_constraint.cpp
 
     # Include files
     include/delta.h
@@ -76,6 +77,7 @@ add_executable(scs-2d-demo WIN32
     include/triple_pendulum_demo.h
     include/complex_roller_demo.h
     include/dtv.h
+    include/constant_rotation_constraint.h
 )
 
 target_link_libraries(scs-2d-demo

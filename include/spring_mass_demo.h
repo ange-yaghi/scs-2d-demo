@@ -15,7 +15,7 @@ class SpringMassDemo : public Demo {
         virtual void render();
 
     protected:
-        atg_scs::RigidBodySystem m_rigidBodySystem;
+        atg_scs::GenericRigidBodySystem m_rigidBodySystem;
 };
 
 #endif /* ATG_SCS_2D_DEMO_SPRING_MASS_DEMO_H */

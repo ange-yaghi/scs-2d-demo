@@ -22,7 +22,7 @@ class MotorDemo : public Demo {
         virtual void render();
     
     protected:
-        atg_scs::RigidBodySystem m_rigidBodySystem;
+        atg_scs::GenericRigidBodySystem m_rigidBodySystem;
 
         BarObject m_bar0;
         BarObject m_bar1;

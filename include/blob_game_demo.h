@@ -20,7 +20,7 @@ class BlobGameDemo : public Demo {
     protected:
         Blob **m_blobs;
         BlobForceObject *m_blobForce;
-        atg_scs::RigidBodySystem m_rigidBodySystem;
+        atg_scs::GenericRigidBodySystem m_rigidBodySystem;
 };
 
 #endif /* ATG_SCS_2D_DEMO_BLOB_GAME_DEMO_H */

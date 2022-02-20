@@ -5,11 +5,8 @@
 
 #include "bar_object.h"
 #include "disk_object.h"
-#include "gravity_object.h"
-#include "link_constraint.h"
-#include "spring_object.h"
-#include "line_constraint.h"
 #include "plotter.h"
+#include "constant_rotation_constraint.h"
 #include "scs.h"
 
 class DoublePendulumDemo : public Demo {
@@ -22,10 +19,13 @@ class DoublePendulumDemo : public Demo {
         virtual void render();
     
     protected:
-        atg_scs::RigidBodySystem m_rigidBodySystem;
+        atg_scs::OptimizedNsvRigidBodySystem m_rigidBodySystem;
 
         DiskObject *m_end;
         Plotter *m_plotter;
+        ConstantRotationConstraint *m_motor;
+
+        bool m_motorOn;
 };
 
 #endif /* ATG_SCS_2D_DEMO_DOUBLE_PENDULUM_DEMO_H */
