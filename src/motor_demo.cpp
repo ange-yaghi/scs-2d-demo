@@ -51,7 +51,7 @@ void MotorDemo::initialize() {
     
     m_rigidBodySystem.reset();
     m_rigidBodySystem.initialize(
-        new atg_scs::GaussSeidelSleSolver, new atg_scs::Rk4OdeSolver);
+        new atg_scs::GaussianEliminationSleSolver, new atg_scs::Rk4OdeSolver);
 
     m_rigidBodySystem.addConstraint(&m_c0);
 

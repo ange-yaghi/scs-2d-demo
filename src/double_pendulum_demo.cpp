@@ -10,6 +10,7 @@ DoublePendulumDemo::DoublePendulumDemo() {
     m_steps = 100;
     m_end = nullptr;
     m_plotter = nullptr;
+    m_motor = nullptr;
     m_motorOn = true;
 }
 
