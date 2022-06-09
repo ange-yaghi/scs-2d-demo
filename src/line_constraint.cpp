@@ -27,16 +27,16 @@ void LineConstraint::render(DemoApplication *app) {
 
     double roller_x, roller_y;
     m_constraint.m_bodies[0]->localToWorld(
-            m_constraint.m_local_x,
-            m_constraint.m_local_y,
+            (float)m_constraint.m_local_x,
+            (float)m_constraint.m_local_y,
             &roller_x,
             &roller_y);
 
     app->drawLineConstraint(
-            m_constraint.m_p0_x,
-            m_constraint.m_p0_y,
-            m_constraint.m_dx,
-            m_constraint.m_dy,
+            (float)m_constraint.m_p0_x,
+            (float)m_constraint.m_p0_y,
+            (float)m_constraint.m_dx,
+            (float)m_constraint.m_dy,
             (float)roller_x,
             (float)roller_y,
             m_trackLength,

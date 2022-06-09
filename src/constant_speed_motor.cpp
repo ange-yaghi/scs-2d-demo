@@ -34,5 +34,5 @@ void ConstantSpeedMotor::render(DemoApplication *app) {
 void ConstantSpeedMotor::process(float dt, DemoApplication *app) {
     DemoObject::process(dt, app);
 
-    m_theta += m_motor.m_speed * dt;
+    m_theta += (float)m_motor.m_speed * dt;
 }

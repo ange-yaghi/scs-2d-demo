@@ -15,7 +15,7 @@ class BarObject : public DemoObject {
         virtual double energy() const;
         virtual void onClick(double x, double y, ClickEvent *clickEvent);
 
-        void configure(float length, float density);
+        void configure(double length, double density);
         float getLength() const { return m_length; }
 
         atg_scs::RigidBody m_body;

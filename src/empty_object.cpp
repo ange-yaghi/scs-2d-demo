@@ -25,14 +25,14 @@ void EmptyObject::render(DemoApplication *app) {
 
     if (m_style == Style::FixedPosition) {
         app->drawFixedPositionConstraint(
-                m_body.p_x,
-                m_body.p_y,
-                m_body.theta);
+                (float)m_body.p_x,
+                (float)m_body.p_y,
+                (float)m_body.theta);
     }
     else if (m_style == Style::Cursor) {
         app->drawCursor(
-            m_body.p_x,
-            m_body.p_y);
+            (float)m_body.p_x,
+            (float)m_body.p_y);
     }
 }
 

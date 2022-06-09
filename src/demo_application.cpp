@@ -1301,8 +1301,8 @@ float DemoApplication::unitsToPixels(float units) const {
 }
 
 void DemoApplication::getGridFrameSize(float *w, float *h) const {
-    *w = pixelsToUnits(m_engine.GetScreenWidth() - 100);
-    *h = pixelsToUnits(m_engine.GetScreenHeight() - 100);
+    *w = pixelsToUnits((float)m_engine.GetScreenWidth() - 100.0f);
+    *h = pixelsToUnits((float)m_engine.GetScreenHeight() - 100.0f);
 }
 
 void DemoApplication::renderScene() {

@@ -46,9 +46,9 @@ void SpringClothDemo::initialize() {
                         nodes[(i - 1) * ClothNodes + j],
                         nodes[(i - 1) * ClothNodes + j]->p_x,
                         nodes[(i - 1) * ClothNodes + j]->p_y);
-                spring->m_spring.m_ks = 20;
-                spring->m_spring.m_kd = 1;
-                spring->m_radius = 0.1;
+                spring->m_spring.m_ks = 20.0;
+                spring->m_spring.m_kd = 1.0;
+                spring->m_radius = 0.1f;
                 spring->m_coilCount = 3;
             }
             
@@ -57,9 +57,9 @@ void SpringClothDemo::initialize() {
                         nodes[i * ClothNodes + j - 1],
                         nodes[i * ClothNodes + j - 1]->p_x,
                         nodes[i * ClothNodes + j - 1]->p_y);
-                spring->m_spring.m_ks = 20;
-                spring->m_spring.m_kd = 1;
-                spring->m_radius = 0.1;
+                spring->m_spring.m_ks = 20.0;
+                spring->m_spring.m_kd = 1.0;
+                spring->m_radius = 0.1f;
                 spring->m_coilCount = 3;
             }
         }

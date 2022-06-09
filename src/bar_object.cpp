@@ -5,7 +5,7 @@
 #include <algorithm>
 
 BarObject::BarObject() {
-    /* void */
+    m_length = 0.0f;
 }
 
 BarObject::~BarObject() {
@@ -28,21 +28,21 @@ void BarObject::render(DemoApplication *app) {
     DemoObject::render(app);
 
     app->drawBar(
-            m_body.p_x,
-            m_body.p_y,
-            m_body.theta,
-            m_length);
+            (float)m_body.p_x,
+            (float)m_body.p_y,
+            (float)m_body.theta,
+            (float)m_length);
 }
 
 void BarObject::process(float dt, DemoApplication *app) {
     DemoObject::process(dt, app);
 }
 
-void BarObject::configure(float length, float density) {
-    m_length = length;
+void BarObject::configure(double length, double density) {
+    m_length = (float)length;
 
-    m_body.m = (double)length * density;
-    m_body.I = (1 / 12.0) * m_body.m * ((double)length * length);
+    m_body.m = length * density;
+    m_body.I = (1 / 12.0) * m_body.m * length * length;
 }
 
 double BarObject::energy() const {

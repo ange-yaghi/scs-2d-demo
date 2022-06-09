@@ -14,30 +14,30 @@ MotorDemo::~MotorDemo() {
 
 void MotorDemo::initialize() {
     m_bar0.reset();
-    m_bar0.configure(2.0f, 2.0f);
-    m_bar0.m_body.p_x = 1.0f;
+    m_bar0.configure(2.0, 2.0);
+    m_bar0.m_body.p_x = 1.0;
 
     m_bar1.reset();
-    m_bar1.configure(1.0f, 2.0f);
-    m_bar1.m_body.p_x = 2.5f;
+    m_bar1.configure(1.0, 2.0);
+    m_bar1.m_body.p_x = 2.5;
 
     m_disk.reset();
-    m_disk.configure(0.25f, 2.0f);
-    m_disk.m_body.p_x = 3.0f;
+    m_disk.configure(0.25, 2.0);
+    m_disk.m_body.p_x = 3.0;
 
-    m_link0.m_link.setLocalPosition1(1.0f, 0.0f);
-    m_link0.m_link.setLocalPosition2(-0.5f, 0.0f);
+    m_link0.m_link.setLocalPosition1(1.0, 0.0);
+    m_link0.m_link.setLocalPosition2(-0.5, 0.0);
     m_link0.m_link.setBody1(&m_bar0.m_body);
     m_link0.m_link.setBody2(&m_bar1.m_body);
 
-    m_link1.m_link.setLocalPosition1(0.5f, 0.0f);
-    m_link1.m_link.setLocalPosition2(0.0f, 0.0f);
+    m_link1.m_link.setLocalPosition1(0.5, 0.0);
+    m_link1.m_link.setLocalPosition2(0.0, 0.0);
     m_link1.m_link.setBody1(&m_bar1.m_body);
     m_link1.m_link.setBody2(&m_disk.m_body);
 
     m_c0.setBody(&m_bar0.m_body);
     m_c0.m_local_y = 0;
-    m_c0.m_local_x = -1.0f;
+    m_c0.m_local_x = -1.0;
     m_c0.m_world_x = m_c0.m_world_y = 0;
     m_gravity.m_gravity.m_g = 10.0;
 

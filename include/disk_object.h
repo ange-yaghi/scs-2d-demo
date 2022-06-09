@@ -15,7 +15,7 @@ class DiskObject : public DemoObject {
         virtual double energy() const;
         virtual void onClick(double x, double y, ClickEvent *clickEvent);
 
-        void configure(float radius, float density);
+        void configure(double radius, double density);
 
         atg_scs::RigidBody m_body;
 

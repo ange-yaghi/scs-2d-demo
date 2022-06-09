@@ -325,8 +325,8 @@ ConstantSpeedMotor *Demo::createMotor(atg_scs::RigidBody *base) {
     double lx, ly;
     base->worldToLocal(m_cursor_x, m_cursor_y, &lx, &ly);
 
-    newMotor->m_local_x = lx;
-    newMotor->m_local_y = ly;
+    newMotor->m_local_x = (float)lx;
+    newMotor->m_local_y = (float)ly;
 
     return newMotor;
 }
@@ -359,7 +359,9 @@ EmptyObject *Demo::createMouseEmpty(EmptyObject::Style style) {
 
 void Demo::moveBefore(DemoObject *a, DemoObject *b) {
     const size_t n = m_objects.size();
-    size_t i_a = -1, i_b = -1;
+    if (n == 0) return;
+
+    size_t i_a = 0, i_b = 0;
     for (size_t i = 0; i < n; ++i) {
         if (m_objects[i] == a) {
             i_a = i;
@@ -370,13 +372,15 @@ void Demo::moveBefore(DemoObject *a, DemoObject *b) {
     }
 
     if (i_a <= i_b) return;
+    else if (m_objects[i_a] != a) return;
+    else if (m_objects[i_b] != b) return;
 
     m_objects[i_b] = a;
 
     DemoObject *prev = m_objects[i_b + 1];
     m_objects[i_b + 1] = b;
 
-    for (int i = i_b + 2; i <= i_a; ++i) {
+    for (size_t i = i_b + 2; i <= i_a; ++i) {
         DemoObject *newPrev = m_objects[i];
         m_objects[i] = prev;
         prev = newPrev;

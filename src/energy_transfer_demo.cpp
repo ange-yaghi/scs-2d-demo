@@ -49,7 +49,7 @@ void EnergyTransferDemo::initialize() {
         SpringObject *s0 = connectSpring(&linkBar0->m_body, 0, y);
         s0->m_spring.m_ks = 70;
         s0->m_spring.m_kd = 0.0; //3
-        s0->m_radius = 0.4;
+        s0->m_radius = 0.4f;
         s0->m_coilCount = 6;
 
         LineConstraint *cr0 = createObject<LineConstraint>(&m_rigidBodySystem);

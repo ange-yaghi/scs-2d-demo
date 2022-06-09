@@ -24,8 +24,8 @@ void FixedPositionConstraint::render(DemoApplication *app) {
     DemoObject::render(app);
 
     app->drawFixedPositionConstraint(
-            m_link.m_world_x,
-            m_link.m_world_y,
+            (float)m_link.m_world_x,
+            (float)m_link.m_world_y,
             m_angle);
 }
 
