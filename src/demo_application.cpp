@@ -141,10 +141,10 @@ void DemoApplication::initialize(void *instance,
 
 void DemoApplication::run() {
     while (true) {
-        if (m_engine.KeyDownEvent(ysKey::Code::Escape)) { break; }
-
         m_engine.StartFrame();
         if (!m_engine.IsOpen()) break;
+
+        if (m_engine.KeyDownEvent(ysKey::Code::Escape)) { break; }
 
         m_displayHeight = 15.0f;
         m_uiScale = (10.0f / (m_displayHeight + 1.0f));
