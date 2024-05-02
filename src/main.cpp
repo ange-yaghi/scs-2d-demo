@@ -8,7 +8,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     (void)hPrevInstance;
 
     DemoApplication app;
-    app.initialize(hInstance, ysContextObject::DeviceAPI::DirectX11);
+    app.initialize(&hInstance, ysContextObject::DeviceAPI::DirectX11);
     app.run();
     app.destroy();
 

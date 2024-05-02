@@ -1,26 +1,25 @@
 #include "../include/demo_application.h"
 
+#include "../include/blob_game_demo.h"
+#include "../include/complex_roller_demo.h"
 #include "../include/double_pendulum_demo.h"
+#include "../include/energy_transfer_demo.h"
 #include "../include/motor_demo.h"
 #include "../include/rolling_demo.h"
-#include "../include/energy_transfer_demo.h"
-#include "../include/spring_mass_demo.h"
 #include "../include/spring_cloth_demo.h"
-#include "../include/blob_game_demo.h"
 #include "../include/spring_double_pendulum_demo.h"
+#include "../include/spring_mass_demo.h"
 #include "../include/triple_pendulum_demo.h"
-#include "../include/complex_roller_demo.h"
 
 #include <cmath>
 #include <sstream>
-#include <cmath>
 
 DemoApplication::DemoApplication() {
     m_cameraTarget = ysMath::Constants::Zero;
     m_cameraPosition = ysMath::LoadVector(0.0f, 0.0f, 5.0f);
     m_cameraUp = ysMath::Constants::YAxis;
 
-    m_assetPath = "";
+    m_assetPath = L"";
 
     m_geometryVertexBuffer = nullptr;
     m_geometryIndexBuffer = nullptr;
@@ -49,18 +48,19 @@ DemoApplication::DemoApplication() {
     }
 }
 
-DemoApplication::~DemoApplication() {
-    /* void */
+DemoApplication::~DemoApplication() { /* void */
 }
 
-void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api) {
+void DemoApplication::initialize(void *instance,
+                                 ysContextObject::DeviceAPI api) {
     dbasic::Path modulePath = dbasic::GetModulePath();
-    dbasic::Path confPath = modulePath.Append("delta.conf");
+    dbasic::Path confPath = modulePath.Append(L"delta.conf");
 
-    std::string enginePath = "../dependencies/submodules/delta-studio/engines/basic";
-    m_assetPath = "../assets/";
+    std::wstring enginePath =
+            L"../dependencies/submodules/delta-studio/engines/basic";
+    m_assetPath = L"../assets/";
     if (confPath.Exists()) {
-        std::fstream confFile(confPath.ToString(), std::ios::in);
+        std::wfstream confFile(confPath.ToString(), std::ios::in);
 
         std::getline(confFile, enginePath);
         std::getline(confFile, m_assetPath);
@@ -70,19 +70,26 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
         confFile.close();
     }
 
-    m_engine.GetConsole()->SetDefaultFontDirectory(enginePath + "/fonts/");
+    m_engine.GetConsole()->SetDefaultFontDirectory(enginePath + L"/fonts/");
 
-    const std::string shaderPath = enginePath + "/shaders/";
+    const std::wstring compiledShaderDirectory = m_assetPath + L"/shaders/";
+    const std::wstring shaderPath = (m_assetPath + L"../shaders/").c_str();
 
     dbasic::DeltaEngine::GameEngineSettings settings;
     settings.API = api;
     settings.DepthBuffer = false;
     settings.Instance = instance;
     settings.ShaderDirectory = shaderPath.c_str();
-    settings.WindowTitle = "Simple 2D Constraint Solver Demo | AngeTheGreat";
+    settings.ShaderCompiledDirectory = compiledShaderDirectory.c_str();
+    settings.WindowTitle = L"Simple 2D Constraint Solver Demo | AngeTheGreat";
     settings.WindowPositionX = 0;
     settings.WindowPositionY = 0;
     settings.WindowStyle = ysWindow::WindowStyle::Windowed;
+#if _DEBUG
+    settings.CompileShaders = true;
+#else
+    settings.CompileShaders = false;
+#endif
 
     m_engine.CreateGameWindow(settings);
 
@@ -92,15 +99,18 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
     m_engine.SetShaderSet(&m_shaderSet);
 
     m_assetManager.SetEngine(&m_engine);
-    m_assetManager.CompileInterchangeFile((m_assetPath + "assets").c_str(), 1.0f, true);
-    m_assetManager.LoadSceneFile((m_assetPath + "assets").c_str());
+#if _DEBUG
+    m_assetManager.CompileInterchangeFile(
+            (m_assetPath + L"../art/" + L"assets").c_str(), 1.0f, true);
+#endif
+    m_assetManager.LoadSceneFile((m_assetPath + L"assets").c_str());
 
     m_shaders.SetCameraMode(dbasic::DefaultShaders::CameraMode::Target);
 
     m_engine.GetDevice()->CreateIndexBuffer(
-        &m_geometryIndexBuffer, sizeof(unsigned short) * 100000, nullptr);
+            &m_geometryIndexBuffer, sizeof(unsigned short) * 100000, nullptr);
     m_engine.GetDevice()->CreateVertexBuffer(
-        &m_geometryVertexBuffer, sizeof(dbasic::Vertex) * 50000, nullptr);
+            &m_geometryVertexBuffer, sizeof(dbasic::Vertex) * 50000, nullptr);
 
     m_geometryGenerator.initialize(50000, 100000);
 
@@ -131,9 +141,7 @@ void DemoApplication::initialize(void *instance, ysContextObject::DeviceAPI api)
 
 void DemoApplication::run() {
     while (true) {
-        if (m_engine.ProcessKeyDown(ysKey::Code::Escape)) {
-            break;
-        }
+        if (m_engine.KeyDownEvent(ysKey::Code::Escape)) { break; }
 
         m_engine.StartFrame();
         if (!m_engine.IsOpen()) break;
@@ -143,62 +151,57 @@ void DemoApplication::run() {
 
         updateScreenSizeStability();
 
-        if (m_engine.ProcessKeyDown(ysKey::Code::Space) &&
-            m_engine.GetGameWindow()->IsActive())
-        {
+        if (m_engine.KeyDownEvent(ysKey::Code::Space) &&
+            m_engine.GetGameWindow()->IsActive()) {
             m_paused = !m_paused;
         }
 
-        if (m_engine.ProcessKeyDown(ysKey::Code::F)) {
-            m_engine.GetGameWindow()->SetWindowStyle(ysWindow::WindowStyle::Fullscreen);
+        if (m_engine.KeyDownEvent(ysKey::Code::F)) {
+            m_engine.GetGameWindow()->SetWindowStyle(
+                    ysWindow::WindowStyle::Fullscreen);
         }
 
-        if (m_engine.ProcessKeyDown(ysKey::Code::R)) {
+        if (m_engine.KeyDownEvent(ysKey::Code::R)) {
             m_demos[m_activeDemo]->reset();
             m_demos[m_activeDemo]->initialize();
         }
 
-        if (m_engine.ProcessKeyDown(ysKey::Code::V) &&
-            m_engine.GetGameWindow()->IsActive())
-        {
+        if (m_engine.KeyDownEvent(ysKey::Code::V) &&
+            m_engine.GetGameWindow()->IsActive()) {
             if (!isRecording() && readyToRecord()) {
                 startRecording();
-            }
-            else if (isRecording()) {
+            } else if (isRecording()) {
                 stopRecording();
             }
         }
 
-        if (isRecording() && !readyToRecord()) {
-            stopRecording();
-        }
+        if (isRecording() && !readyToRecord()) { stopRecording(); }
 
         m_demos[m_activeDemo]->processInput();
 
-        if (!m_paused || m_engine.ProcessKeyDown(ysKey::Code::Right)) {
+        if (!m_paused) {
+            // todo: should update based on elapsed frame time
+            m_demos[m_activeDemo]->process(1 / 60.0f);
+        } else if (m_engine.KeyDownEvent(ysKey::Code::Right)) {
             m_demos[m_activeDemo]->process(1 / 60.0f);
         }
 
         renderScene();
 
-        m_engine.EndFrame();
-
-        if (isRecording()) {
-            recordFrame();
+        if (m_engine.KeyDownEvent(ysKey::Code::Tab)) {
+            m_activeDemo = (m_activeDemo + 1) % (int) m_demos.size();
         }
 
-        if (m_engine.ProcessKeyDown(ysKey::Code::Tab)) {
-            m_activeDemo = (m_activeDemo + 1) % (int)m_demos.size();
-        }
-
-        if (m_engine.ProcessKeyDown(ysKey::Code::S)) {
+        if (m_engine.KeyDownEvent(ysKey::Code::S)) {
             m_showingStats = !m_showingStats;
         }
+
+        m_engine.EndFrame();
+
+        if (isRecording()) { recordFrame(); }
     }
 
-    if (isRecording()) {
-        stopRecording();
-    }
+    if (isRecording()) { stopRecording(); }
 }
 
 void DemoApplication::destroy() {
@@ -212,30 +215,17 @@ void DemoApplication::destroy() {
 }
 
 void DemoApplication::drawGenerated(
-        const GeometryGenerator::GeometryIndices &indices,
-        int layer)
-{
-    m_engine.DrawGeneric(
-        m_shaders.GetRegularFlags(),
-        m_geometryIndexBuffer,
-        m_geometryVertexBuffer,
-        sizeof(dbasic::Vertex),
-        indices.BaseIndex,
-        indices.BaseVertex,
-        indices.FaceCount,
-        true,
-        layer);
+        const GeometryGenerator::GeometryIndices &indices, int layer) {
+    m_engine.DrawGeneric(m_shaders.GetRegularFlags(), m_geometryIndexBuffer,
+                         m_geometryVertexBuffer, m_shaders.shaderProgram(),
+                         m_shaders.inputLayout(), sizeof(dbasic::Vertex),
+                         indices.BaseIndex, indices.BaseVertex,
+                         indices.FaceCount, true, layer);
 }
 
-void DemoApplication::drawBar(
-        float x,
-        float y,
-        float theta,
-        float length,
-        float width_px)
-{
-    GeometryGenerator::GeometryIndices
-        bar, shadow, bolts;
+void DemoApplication::drawBar(float x, float y, float theta, float length,
+                              float width_px) {
+    GeometryGenerator::GeometryIndices bar, shadow, bolts;
 
     const float shadowWidth = 6.0f;
 
@@ -268,7 +258,8 @@ void DemoApplication::drawBar(
     // Shadows
     m_geometryGenerator.startShape();
 
-    lineParams.lineWidth = pixelsToUnits(width_px + shadowWidth * 2) * m_uiScale;
+    lineParams.lineWidth =
+            pixelsToUnits(width_px + shadowWidth * 2) * m_uiScale;
     m_geometryGenerator.generateLine2d(lineParams);
     circleParams.radius = pixelsToUnits(width_px / 2 + shadowWidth) * m_uiScale;
 
@@ -294,16 +285,10 @@ void DemoApplication::drawBar(
 
     // Draw shapes
     ysMatrix mat = ysMath::RotationTransform(
-        ysMath::LoadVector(0.0f, 0.0f, 1.0f),
-        (float)theta);
-    mat = ysMath::MatMult(
-        ysMath::TranslationTransform(
-            ysMath::LoadVector(
-                (float)x,
-                (float)y,
-                0.0f,
-                0.0f)),
-        mat);
+            ysMath::LoadVector(0.0f, 0.0f, 1.0f), (float) theta);
+    mat = ysMath::MatMult(ysMath::TranslationTransform(ysMath::LoadVector(
+                                  (float) x, (float) y, 0.0f, 0.0f)),
+                          mat);
 
     m_shaders.ResetBrdfParameters();
     m_shaders.SetColorReplace(true);
@@ -322,18 +307,11 @@ void DemoApplication::drawBar(
     drawGenerated(bolts);
 }
 
-void DemoApplication::drawRoundedFrame(
-    float x,
-    float y,
-    float width,
-    float height,
-    float thickness,
-    float cornerRadius)
-{
+void DemoApplication::drawRoundedFrame(float x, float y, float width,
+                                       float height, float thickness,
+                                       float cornerRadius) {
     const float maxCornerRadius = std::fminf(width / 2, height / 2);
-    if (cornerRadius > maxCornerRadius) {
-        cornerRadius = maxCornerRadius;
-    }
+    if (cornerRadius > maxCornerRadius) { cornerRadius = maxCornerRadius; }
 
     GeometryGenerator::Line2dParameters params;
     params.lineWidth = thickness;
@@ -465,21 +443,22 @@ void DemoApplication::drawGrid() {
     const float logoModelHeight = 2.59f;
     const float logoUiHeight = pixelsToUnits(92) * m_uiScale;
 
-    m_shaders.SetObjectTransform(
-        ysMath::MatMult(
-            ysMath::TranslationTransform(
-                ysMath::LoadVector(frameWidth / 2 - 0.5f, -frameHeight / 2 + 0.5f)),
-            ysMath::ScaleTransform(ysMath::LoadScalar(logoUiHeight / logoModelHeight))
-        ));
+    m_shaders.SetObjectTransform(ysMath::MatMult(
+            ysMath::TranslationTransform(ysMath::LoadVector(
+                    frameWidth / 2 - 0.5f, -frameHeight / 2 + 0.5f)),
+            ysMath::ScaleTransform(
+                    ysMath::LoadScalar(logoUiHeight / logoModelHeight))));
 
     m_shaders.SetBaseColor(m_shadow);
-    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_logoBackground, BackgroundLayer);
+    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_logoBackground,
+                       BackgroundLayer);
 
     m_shaders.SetBaseColor(ysMath::LoadVector(c0, c0, c0, 1.0f));
     m_engine.DrawModel(m_shaders.GetRegularFlags(), m_logo, ForegroundLayer);
 }
 
-void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle) {
+void DemoApplication::drawFixedPositionConstraint(float x, float y,
+                                                  float angle) {
     GeometryGenerator::GeometryIndices indices, pin, shadow;
 
     const float radius = pixelsToUnits(25.0f * m_uiScale);
@@ -507,7 +486,8 @@ void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle)
     lineParams.lineWidth = supportThickness;
     lineParams.x0 = -supportWidth / 2;
     lineParams.x1 = supportWidth / 2;
-    lineParams.y0 = lineParams.y1 = -radius - shadowThickness - supportThickness / 2;
+    lineParams.y0 = lineParams.y1 =
+            -radius - shadowThickness - supportThickness / 2;
     m_geometryGenerator.generateLine2d(lineParams);
 
     m_geometryGenerator.endShape(&indices);
@@ -532,16 +512,10 @@ void DemoApplication::drawFixedPositionConstraint(float x, float y, float angle)
 
     // Draw geometry
     ysMatrix mat = ysMath::RotationTransform(
-        ysMath::LoadVector(0.0f, 0.0f, 1.0f),
-        (float)angle);
+            ysMath::LoadVector(0.0f, 0.0f, 1.0f), (float) angle);
     mat = ysMath::MatMult(
-        ysMath::TranslationTransform(
-            ysMath::LoadVector(
-                x,
-                y,
-                0.0f,
-                0.0f)),
-        mat);
+            ysMath::TranslationTransform(ysMath::LoadVector(x, y, 0.0f, 0.0f)),
+            mat);
 
     m_shaders.ResetBrdfParameters();
     m_shaders.SetBaseColor(ysMath::LoadVector(1.0f, 1.0f, 1.0f, 1.0f));
@@ -591,13 +565,8 @@ void DemoApplication::drawCursor(float x, float y) {
     m_geometryGenerator.endShape(&shadow);
 
     // Draw geometry
-    ysMatrix mat =
-        ysMath::TranslationTransform(
-            ysMath::LoadVector(
-                (float)x,
-                (float)y,
-                0.0f,
-                0.0f));
+    ysMatrix mat = ysMath::TranslationTransform(
+            ysMath::LoadVector((float) x, (float) y, 0.0f, 0.0f));
 
     m_shaders.ResetBrdfParameters();
     m_shaders.SetBaseColor(ysMath::LoadVector(1.0f, 1.0f, 1.0f, 1.0f));
@@ -614,36 +583,22 @@ void DemoApplication::drawCursor(float x, float y) {
     drawGenerated(main);
 }
 
-void DemoApplication::drawSpring(
-        float x0,
-        float y0,
-        float x1,
-        float y1,
-        int coils,
-        float radius)
-{
+void DemoApplication::drawSpring(float x0, float y0, float x1, float y1,
+                                 int coils, float radius) {
     const float dx = x1 - x0;
     const float dy = y1 - y0;
     const float length = std::sqrt(dx * dx + dy * dy);
-    float theta = (dy < 0)
-        ? ysMath::Constants::TWO_PI - std::acos(dx / length)
-        : std::acos(dx / length);
+    float theta = (dy < 0) ? ysMath::Constants::TWO_PI - std::acos(dx / length)
+                           : std::acos(dx / length);
 
     GeometryGenerator::Line2dParameters lineParams;
     GeometryGenerator::Rhombus2dParameters rhombParams;
     GeometryGenerator::Circle2dParameters circleParams;
     GeometryGenerator::Trapezoid2dParameters trapParams;
 
-    GeometryGenerator::GeometryIndices
-        rods,
-        rodShadows,
-        retainers,
-        retainerShadows,
-        coilBack,
-        coilBackShadow,
-        coilFront,
-        coilFrontShadow,
-        bolts;
+    GeometryGenerator::GeometryIndices rods, rodShadows, retainers,
+            retainerShadows, coilBack, coilBackShadow, coilFront,
+            coilFrontShadow, bolts;
 
     const float rodThickness = pixelsToUnits(20) * m_uiScale;
     const float coilThickness = pixelsToUnits(10) * m_uiScale;
@@ -750,8 +705,8 @@ void DemoApplication::drawSpring(
     rhombParams.shear = rawShear;
 
     for (int i = 0; i < coils + 1; ++i) {
-        rhombParams.center_x =
-            -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i);
+        rhombParams.center_x = -coilLength / 2.0f + fullRhombusWidth / 2 +
+                               rhombSegment * (2 * i);
         m_geometryGenerator.generateRhombus(rhombParams);
     }
 
@@ -763,8 +718,8 @@ void DemoApplication::drawSpring(
     rhombParams.shear = -rhombParams.shear;
 
     for (int i = 0; i < coils; ++i) {
-        rhombParams.center_x =
-            -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i + 1);
+        rhombParams.center_x = -coilLength / 2.0f + fullRhombusWidth / 2 +
+                               rhombSegment * (2 * i + 1);
         m_geometryGenerator.generateRhombus(rhombParams);
     }
 
@@ -774,20 +729,21 @@ void DemoApplication::drawSpring(
     m_geometryGenerator.startShape();
     trapParams.height = shadowThickness;
     trapParams.base = coilThickness + shadowThickness * 2;
-    trapParams.top = trapParams.base - (rawShear / retainerRadius) * shadowThickness * 2;
+    trapParams.top =
+            trapParams.base - (rawShear / retainerRadius) * shadowThickness * 2;
     rhombParams.width = coilThickness + shadowThickness * 2;
     rhombParams.height = 2 * retainerRadius;
     rhombParams.shear = -rawShear;
 
     for (int i = 0; i < coils + 1; ++i) {
         if (i < coils) {
-            rhombParams.center_x =
-                -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i + 1);
+            rhombParams.center_x = -coilLength / 2.0f + fullRhombusWidth / 2 +
+                                   rhombSegment * (2 * i + 1);
             m_geometryGenerator.generateRhombus(rhombParams);
         }
 
-        trapParams.center_x =
-            -shadowThickness - coilLength / 2.0f + rhombSegment * (2 * i + 1) + trapParams.base / 2;
+        trapParams.center_x = -shadowThickness - coilLength / 2.0f +
+                              rhombSegment * (2 * i + 1) + trapParams.base / 2;
         trapParams.center_y = retainerRadius + shadowThickness / 2;
         m_geometryGenerator.generateTrapezoid2d(trapParams);
     }
@@ -798,15 +754,16 @@ void DemoApplication::drawSpring(
     m_geometryGenerator.startShape();
     rhombParams.shear = -rhombParams.shear;
     trapParams.top = coilThickness + shadowThickness * 2;
-    trapParams.base = trapParams.top - (rawShear / retainerRadius) * shadowThickness * 2;
+    trapParams.base =
+            trapParams.top - (rawShear / retainerRadius) * shadowThickness * 2;
 
     for (int i = 0; i < coils + 1; ++i) {
-        rhombParams.center_x =
-            -coilLength / 2.0f + fullRhombusWidth / 2 + rhombSegment * (2 * i);
+        rhombParams.center_x = -coilLength / 2.0f + fullRhombusWidth / 2 +
+                               rhombSegment * (2 * i);
         m_geometryGenerator.generateRhombus(rhombParams);
 
-        trapParams.center_x =
-            -shadowThickness - coilLength / 2.0f + rhombSegment * (2 * i) + trapParams.top / 2;
+        trapParams.center_x = -shadowThickness - coilLength / 2.0f +
+                              rhombSegment * (2 * i) + trapParams.top / 2;
         trapParams.center_y = -(retainerRadius + shadowThickness / 2);
         m_geometryGenerator.generateTrapezoid2d(trapParams);
     }
@@ -827,16 +784,11 @@ void DemoApplication::drawSpring(
 
     // Draw geometry
     ysMatrix mat = ysMath::RotationTransform(
-        ysMath::LoadVector(0.0f, 0.0f, 1.0f),
-        (float)theta);
+            ysMath::LoadVector(0.0f, 0.0f, 1.0f), (float) theta);
     mat = ysMath::MatMult(
-        ysMath::TranslationTransform(
-            ysMath::LoadVector(
-                (float)(x0 + x1) / 2,
-                (float)(y0 + y1) / 2,
-                0.0f,
-                0.0f)),
-        mat);
+            ysMath::TranslationTransform(ysMath::LoadVector(
+                    (float) (x0 + x1) / 2, (float) (y0 + y1) / 2, 0.0f, 0.0f)),
+            mat);
 
     m_shaders.ResetBrdfParameters();
     m_shaders.SetBaseColor(ysMath::LoadVector(1.0f, 1.0f, 1.0f, 1.0f));
@@ -921,16 +873,10 @@ void DemoApplication::drawDisk(float x, float y, float theta, float radius) {
 
     // Draw geometry
     ysMatrix mat = ysMath::RotationTransform(
-        ysMath::LoadVector(0.0f, 0.0f, 1.0f),
-        (float)theta);
-    mat = ysMath::MatMult(
-        ysMath::TranslationTransform(
-            ysMath::LoadVector(
-                (float)x,
-                (float)y,
-                0.0f,
-                0.0f)),
-        mat);
+            ysMath::LoadVector(0.0f, 0.0f, 1.0f), (float) theta);
+    mat = ysMath::MatMult(ysMath::TranslationTransform(ysMath::LoadVector(
+                                  (float) x, (float) y, 0.0f, 0.0f)),
+                          mat);
 
     m_shaders.ResetBrdfParameters();
     m_shaders.SetBaseColor(ysMath::LoadVector(1.0f, 1.0f, 1.0f, 1.0f));
@@ -950,26 +896,17 @@ void DemoApplication::drawDisk(float x, float y, float theta, float radius) {
     drawGenerated(details);
 }
 
-void DemoApplication::drawLineConstraint(
-        float x,
-        float y,
-        float dx,
-        float dy,
-        float roller_x,
-        float roller_y,
-        float length,
-        float sliderLength,
-        bool drawTrack)
-{
+void DemoApplication::drawLineConstraint(float x, float y, float dx, float dy,
+                                         float roller_x, float roller_y,
+                                         float length, float sliderLength,
+                                         bool drawTrack) {
     const float width = length;
     const float height = pixelsToUnits(40.0f) * m_uiScale;
     const float thickness = pixelsToUnits(10.0f) * m_uiScale;
     const float sliderThickness = pixelsToUnits(10.0f) * m_uiScale;
     const float boltRadius = pixelsToUnits(5) * m_uiScale;
 
-    const float theta = (dy > 0)
-        ? std::acosf(dx)
-        : -std::acosf(dx);
+    const float theta = (dy > 0) ? std::acosf(dx) : -std::acosf(dx);
 
     const float local_x = roller_x - x;
     const float local_y = roller_y - y;
@@ -1010,16 +947,10 @@ void DemoApplication::drawLineConstraint(
 
     // Draw geometry
     ysMatrix mat = ysMath::RotationTransform(
-        ysMath::LoadVector(0.0f, 0.0f, 1.0f),
-        (float)theta);
-    mat = ysMath::MatMult(
-        ysMath::TranslationTransform(
-            ysMath::LoadVector(
-                (float)x,
-                (float)y,
-                0.0f,
-                0.0f)),
-        mat);
+            ysMath::LoadVector(0.0f, 0.0f, 1.0f), (float) theta);
+    mat = ysMath::MatMult(ysMath::TranslationTransform(ysMath::LoadVector(
+                                  (float) x, (float) y, 0.0f, 0.0f)),
+                          mat);
 
     m_shaders.ResetBrdfParameters();
     m_shaders.SetColorReplace(true);
@@ -1029,20 +960,16 @@ void DemoApplication::drawLineConstraint(
     m_shaders.SetObjectTransform(mat);
 
     m_shaders.SetBaseColor(m_foreground);
-    if (drawTrack) drawRoundedFrame(0.0f, 0.0f, width, height, thickness, height / 2.0f);
+    if (drawTrack)
+        drawRoundedFrame(0.0f, 0.0f, width, height, thickness, height / 2.0f);
     drawGenerated(slider, BackgroundLayer);
 
     m_shaders.SetBaseColor(m_shadow);
     drawGenerated(pin, ForegroundLayer);
 }
 
-void DemoApplication::drawMotor(
-        float x,
-        float y,
-        float theta,
-        float radius,
-        bool positive)
-{
+void DemoApplication::drawMotor(float x, float y, float theta, float radius,
+                                bool positive) {
     const float width = pixelsToUnits(10.0f) * m_uiScale;
 
     GeometryGenerator::GeometryIndices arrow;
@@ -1066,16 +993,10 @@ void DemoApplication::drawMotor(
 
     // Draw geometry
     ysMatrix mat = ysMath::RotationTransform(
-        ysMath::LoadVector(0.0f, 0.0f, 1.0f),
-        (float)theta);
-    mat = ysMath::MatMult(
-        ysMath::TranslationTransform(
-            ysMath::LoadVector(
-                (float)x,
-                (float)y,
-                0.0f,
-                0.0f)),
-        mat);
+            ysMath::LoadVector(0.0f, 0.0f, 1.0f), (float) theta);
+    mat = ysMath::MatMult(ysMath::TranslationTransform(ysMath::LoadVector(
+                                  (float) x, (float) y, 0.0f, 0.0f)),
+                          mat);
 
     m_shaders.ResetBrdfParameters();
     m_shaders.SetColorReplace(true);
@@ -1125,12 +1046,10 @@ void DemoApplication::renderTitle() {
     m_geometryGenerator.endShape(&fill);
 
     // Draw geometry
-    ysMatrix mat = ysMath::TranslationTransform(
-            ysMath::LoadVector(
-                (float)-gridWidth / 2 + leftMargin + titleBoxWidth / 2,
-                (float)gridHeight / 2 - topMargin - titleBoxHeight / 2,
-                0.0f,
-                0.0f));
+    ysMatrix mat = ysMath::TranslationTransform(ysMath::LoadVector(
+            (float) -gridWidth / 2 + leftMargin + titleBoxWidth / 2,
+            (float) gridHeight / 2 - topMargin - titleBoxHeight / 2, 0.0f,
+            0.0f));
 
     m_shaders.ResetBrdfParameters();
     m_shaders.SetColorReplace(true);
@@ -1146,75 +1065,55 @@ void DemoApplication::renderTitle() {
     drawGenerated(frame, ForegroundLayer);
 
     float p_y = unitsToPixels(gridHeight / 2 - topMargin) - 36;
-    m_textRenderer.RenderText(
-        m_demos[m_activeDemo]->getName(),
-        unitsToPixels(-gridWidth / 2 + leftMargin) + 10,
-        p_y,
-        32
-    );
+    m_textRenderer.RenderText(m_demos[m_activeDemo]->getName(),
+                              unitsToPixels(-gridWidth / 2 + leftMargin) + 10,
+                              p_y, 32);
 
     p_y -= 32;
     m_textRenderer.RenderText(
-        "INFO",
-        unitsToPixels(-gridWidth / 2 + leftMargin) + 10,
-        p_y,
-        26
-    );
+            "INFO", unitsToPixels(-gridWidth / 2 + leftMargin) + 10, p_y, 26);
 
     m_textRenderer.RenderText(
-        "PROFILING",
-        unitsToPixels(-gridWidth / 2 + leftMargin + titleBoxWidth / 2) + 10,
-        p_y,
-        26
-    );
+            "PROFILING",
+            unitsToPixels(-gridWidth / 2 + leftMargin + titleBoxWidth / 2) + 10,
+            p_y, 26);
 
     p_y -= 20;
     std::stringstream ss;
-    const long freq =
-        std::lroundf(m_demos[m_activeDemo]->getSteps() / m_demos[m_activeDemo]->getTimestep());
+    const long freq = std::lroundf(m_demos[m_activeDemo]->getSteps() /
+                                   m_demos[m_activeDemo]->getTimestep());
 
-    ss << "RT FR = " << std::lroundf(m_engine.GetAverageFramerate()) << " FPS       \n";
+    ss << "RT FR = " << std::lroundf(m_engine.GetAverageFramerate())
+       << " FPS       \n";
     ss << "SR = " << freq << " HZ      \n";
     ss << "STEPS = " << m_demos[m_activeDemo]->getSteps() << "     \n";
     ss << "ENERGY = " << m_demos[m_activeDemo]->energy() << "      \n";
     m_textRenderer.RenderText(
-        ss.str(),
-        unitsToPixels(-gridWidth / 2 + leftMargin) + 10,
-        p_y,
-        16
-    );
+            ss.str(), unitsToPixels(-gridWidth / 2 + leftMargin) + 10, p_y, 16);
 
     ss = std::stringstream();
 
-    ss << "F-EVAL = " << m_demos[m_activeDemo]->getForceEvalMicroseconds() << " us       \n";
-    ss << "C-EVAL = " << m_demos[m_activeDemo]->getConstraintEvalMicroseconds() << " us  \n";
-    ss << "C-SOLVE = " << m_demos[m_activeDemo]->getConstraintSolveMicroseconds() << " us\n";
-    ss << "ODE = " << m_demos[m_activeDemo]->getOdeSolveMicroseconds() << " us        \n";
+    ss << "F-EVAL = " << m_demos[m_activeDemo]->getForceEvalMicroseconds()
+       << " us       \n";
+    ss << "C-EVAL = " << m_demos[m_activeDemo]->getConstraintEvalMicroseconds()
+       << " us  \n";
+    ss << "C-SOLVE = "
+       << m_demos[m_activeDemo]->getConstraintSolveMicroseconds() << " us\n";
+    ss << "ODE = " << m_demos[m_activeDemo]->getOdeSolveMicroseconds()
+       << " us        \n";
     m_textRenderer.RenderText(
-        ss.str(),
-        unitsToPixels(-gridWidth / 2 + leftMargin + titleBoxWidth / 2) + 10,
-        p_y,
-        16
-    );
+            ss.str(),
+            unitsToPixels(-gridWidth / 2 + leftMargin + titleBoxWidth / 2) + 10,
+            p_y, 16);
 
     p_y -= 5 * 16;
 
     m_textRenderer.RenderText(
-        (m_paused)
-            ? "PAUSED // OKAY     "
-            : "RUNNING // OKAY     ",
-        unitsToPixels(-gridWidth / 2 + leftMargin) + 10,
-        p_y,
-        26
-    );
+            (m_paused) ? "PAUSED // OKAY     " : "RUNNING // OKAY     ",
+            unitsToPixels(-gridWidth / 2 + leftMargin) + 10, p_y, 26);
 }
 
-void DemoApplication::drawLines(
-        ysVector2 *p0,
-        ysVector2 *p1,
-        int n0,
-        int n1)
-{
+void DemoApplication::drawLines(ysVector2 *p0, ysVector2 *p1, int n0, int n1) {
     if (n0 <= 0) return;
 
     GeometryGenerator::GeometryIndices lines;
@@ -1229,24 +1128,16 @@ void DemoApplication::drawLines(
 
     params.i = 0;
     params.width = pixelsToUnits(0.5f);
-    if (!m_geometryGenerator.startPath(params)) {
-        return;
-    }
+    if (!m_geometryGenerator.startPath(params)) { return; }
 
     ysVector2 prev = p0[0];
     for (int i = 1; i < n0 + n1; ++i) {
-        ysVector2 *p = (i >= n0)
-            ? p1
-            : p0;
-        const int index = (i >= n0)
-            ? i - n0
-            : i;
-        const float s = (float)(i) / (n0 + n1);
+        ysVector2 *p = (i >= n0) ? p1 : p0;
+        const int index = (i >= n0) ? i - n0 : i;
+        const float s = (float) (i) / (n0 + n1);
         const ysVector2 p_i = p[index];
         params.i = i;
-        params.width = std::fmaxf(
-            pixelsToUnits(2.0f) * s,
-            pixelsToUnits(0.5f));
+        params.width = std::fmaxf(pixelsToUnits(2.0f) * s, pixelsToUnits(0.5f));
 
         if (s > 0.95f) {
             params.width += pixelsToUnits(((s - 0.95f) / 0.05f) * 6);
@@ -1273,21 +1164,22 @@ void DemoApplication::drawBlob(float x, float y) {
     const float blobModelHeight = 2.94f;
     const float blobHeight = 1.0f;
 
-    m_shaders.SetObjectTransform(
-        ysMath::MatMult(
-            ysMath::TranslationTransform(
-                ysMath::LoadVector(x, y)),
-            ysMath::ScaleTransform(ysMath::LoadScalar(blobHeight / blobModelHeight))
-        ));
+    m_shaders.SetObjectTransform(ysMath::MatMult(
+            ysMath::TranslationTransform(ysMath::LoadVector(x, y)),
+            ysMath::ScaleTransform(
+                    ysMath::LoadScalar(blobHeight / blobModelHeight))));
 
     m_shaders.SetBaseColor(m_shadow);
-    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_blobBackground, ForegroundLayer);
+    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_blobBackground,
+                       ForegroundLayer);
 
     m_shaders.SetBaseColor(m_foreground);
-    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_blobForeground, ForegroundLayer);
+    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_blobForeground,
+                       ForegroundLayer);
 
     m_shaders.SetBaseColor(m_shadow);
-    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_blobFace, ForegroundLayer);
+    m_engine.DrawModel(m_shaders.GetRegularFlags(), m_blobFace,
+                       ForegroundLayer);
 }
 
 float DemoApplication::pixelsToUnits(float pixels) const {
@@ -1301,8 +1193,8 @@ float DemoApplication::unitsToPixels(float units) const {
 }
 
 void DemoApplication::getGridFrameSize(float *w, float *h) const {
-    *w = pixelsToUnits((float)m_engine.GetScreenWidth() - 100.0f);
-    *h = pixelsToUnits((float)m_engine.GetScreenHeight() - 100.0f);
+    *w = pixelsToUnits((float) m_engine.GetScreenWidth() - 100.0f);
+    *h = pixelsToUnits((float) m_engine.GetScreenHeight() - 100.0f);
 }
 
 void DemoApplication::renderScene() {
@@ -1311,7 +1203,7 @@ void DemoApplication::renderScene() {
     const int screenWidth = m_engine.GetGameWindow()->GetGameWidth();
     const int screenHeight = m_engine.GetGameWindow()->GetGameHeight();
 
-    m_shaders.SetScreenDimensions((float)screenWidth, (float)screenHeight);
+    m_shaders.SetScreenDimensions((float) screenWidth, (float) screenHeight);
 
     m_shaders.SetCameraPosition(m_cameraPosition);
     m_shaders.SetCameraTarget(m_cameraTarget);
@@ -1319,13 +1211,11 @@ void DemoApplication::renderScene() {
     m_shaders.CalculateUiCamera();
 
     if (screenWidth > 0 && screenHeight > 0) {
-        const float aspectRatio = screenWidth / (float)screenHeight;
+        const float aspectRatio = screenWidth / (float) screenHeight;
         m_shaders.SetProjection(ysMath::Transpose(
-            ysMath::OrthographicProjection(
-                aspectRatio * m_displayHeight,
-                m_displayHeight,
-                0.001f,
-                500.0f)));
+                ysMath::OrthographicProjection(aspectRatio * m_displayHeight,
+                                               m_displayHeight, 0.001f,
+                                               500.0f)));
     }
 
     m_geometryGenerator.reset();
@@ -1334,16 +1224,16 @@ void DemoApplication::renderScene() {
     renderTitle();
 
     m_engine.GetDevice()->EditBufferDataRange(
-        m_geometryVertexBuffer,
-        (char *)m_geometryGenerator.getVertexData(),
-        sizeof(dbasic::Vertex) * m_geometryGenerator.getCurrentVertexCount(),
-        0);
+            m_geometryVertexBuffer,
+            (char *) m_geometryGenerator.getVertexData(),
+            sizeof(dbasic::Vertex) *
+                    m_geometryGenerator.getCurrentVertexCount(),
+            0);
 
     m_engine.GetDevice()->EditBufferDataRange(
-        m_geometryIndexBuffer,
-        (char *)m_geometryGenerator.getIndexData(),
-        sizeof(unsigned short) * m_geometryGenerator.getCurrentIndexCount(),
-        0);
+            m_geometryIndexBuffer, (char *) m_geometryGenerator.getIndexData(),
+            sizeof(unsigned short) * m_geometryGenerator.getCurrentIndexCount(),
+            0);
 }
 
 void DemoApplication::startRecording() {
@@ -1370,7 +1260,8 @@ void DemoApplication::updateScreenSizeStability() {
     m_screenResolution[m_screenResolutionIndex][0] = m_engine.GetScreenWidth();
     m_screenResolution[m_screenResolutionIndex][1] = m_engine.GetScreenHeight();
 
-    m_screenResolutionIndex = (m_screenResolutionIndex + 1) % ScreenResolutionHistoryLength;
+    m_screenResolutionIndex =
+            (m_screenResolutionIndex + 1) % ScreenResolutionHistoryLength;
 }
 
 bool DemoApplication::readyToRecord() {
@@ -1403,8 +1294,10 @@ void DemoApplication::recordFrame() {
     const int height = m_engine.GetScreenHeight();
 
     atg_dtv::Frame *frame = m_encoder.newFrame(true);
-    if (frame != nullptr && m_encoder.getError() == atg_dtv::Encoder::Error::None) {
-        m_engine.GetDevice()->ReadRenderTarget(m_engine.GetScreenRenderTarget(), frame->m_rgb);
+    if (frame != nullptr &&
+        m_encoder.getError() == atg_dtv::Encoder::Error::None) {
+        m_engine.GetDevice()->ReadRenderTarget(m_engine.GetScreenRenderTarget(),
+                                               frame->m_rgb);
     }
 
     m_encoder.submitFrame();

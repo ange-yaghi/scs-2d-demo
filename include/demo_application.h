@@ -92,7 +92,7 @@ protected:
     ysVector m_cameraTarget;
     ysVector m_cameraUp;
 
-    std::string m_assetPath;
+    std::wstring m_assetPath;
 
     ysGPUBuffer *m_geometryVertexBuffer;
     ysGPUBuffer *m_geometryIndexBuffer;
